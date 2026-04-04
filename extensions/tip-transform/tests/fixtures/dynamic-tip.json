@@ -1,0 +1,56 @@
+{
+  "payload": {
+    "export": "cart-transform-run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/2",
+            "quantity": 1,
+            "tipSource": {
+              "value": "dynamic_subtotal"
+            },
+            "tipMode": {
+              "value": "percentage"
+            },
+            "tipPercentage": {
+              "value": "10"
+            },
+            "tipAmount": {
+              "value": "8.86"
+            },
+            "tipLabel": {
+              "value": "Add 10% ($8.86) tip"
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/2",
+              "title": "Tip placeholder",
+              "product": {
+                "title": "Tip placeholder"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "lineUpdate": {
+            "cartLineId": "gid://shopify/CartLine/2",
+            "title": "Add 10% ($8.86) tip",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "8.86"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,268 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775203552726,
+  "projectRoot": "d:\\khanh-dev",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=20.19 <22 || >=22.12",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "18.3.1",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "18.3.1",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "6.3.6",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 20.1922||22.12"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "build": "react-router build",
+      "dev": "shopify app dev",
+      "config:link": "shopify app config link",
+      "generate": "shopify app generate",
+      "deploy": "shopify app deploy",
+      "config:use": "shopify app config use",
+      "env": "shopify app env",
+      "start": "react-router-serve ./build/server/index.js",
+      "docker-start": "npm run setup && npm run start",
+      "setup": "prisma generate && prisma migrate deploy",
+      "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+      "shopify": "shopify",
+      "prisma": "prisma",
+      "graphql-codegen": "graphql-codegen",
+      "vite": "vite",
+      "typecheck": "react-router typegen && tsc --noEmit"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "extensions/*"
+    ],
+    "mainDirectories": [
+      "app",
+      "public"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 6,
+      "lastAccessed": 1775203552680,
+      "keyFiles": [
+        "db.server.js",
+        "entry.server.jsx",
+        "root.jsx",
+        "routes.js",
+        "shopify.server.js"
+      ]
+    },
+    "extensions": {
+      "path": "extensions",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775203552680,
+      "keyFiles": []
+    },
+    "prisma": {
+      "path": "prisma",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1775203552691,
+      "keyFiles": [
+        "dev.sqlite",
+        "schema.prisma"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1775203552692,
+      "keyFiles": [
+        "favicon.ico"
+      ]
+    },
+    "app\\routes": {
+      "path": "app\\routes",
+      "purpose": "Route handlers",
+      "fileCount": 7,
+      "lastAccessed": 1775203552692,
+      "keyFiles": [
+        "app.additional.jsx",
+        "app.jsx",
+        "app._index.jsx"
+      ]
+    },
+    "prisma\\migrations": {
+      "path": "prisma\\migrations",
+      "purpose": "Database migrations",
+      "fileCount": 0,
+      "lastAccessed": 1775203552693,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "extensions\\checkout-ui\\src\\Checkout.jsx",
+      "accessCount": 35,
+      "lastAccessed": 1775238903164,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 10,
+      "lastAccessed": 1775203848109,
+      "type": "file"
+    },
+    {
+      "path": "app\\routes\\app.settings.tip-block.jsx",
+      "accessCount": 6,
+      "lastAccessed": 1775213107249,
+      "type": "file"
+    },
+    {
+      "path": "extensions\\checkout-ui\\shopify.extension.toml",
+      "accessCount": 6,
+      "lastAccessed": 1775239510233,
+      "type": "file"
+    },
+    {
+      "path": "extensions\\checkout-ui\\tsconfig.json",
+      "accessCount": 4,
+      "lastAccessed": 1775205555214,
+      "type": "file"
+    },
+    {
+      "path": "app\\routes\\app.jsx",
+      "accessCount": 2,
+      "lastAccessed": 1775211703869,
+      "type": "file"
+    },
+    {
+      "path": "shopify.app.toml",
+      "accessCount": 2,
+      "lastAccessed": 1775239373080,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1775203589709,
+      "type": "directory"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1775203600499,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1775203600539,
+      "type": "file"
+    },
+    {
+      "path": "prisma\\schema.prisma",
+      "accessCount": 1,
+      "lastAccessed": 1775203617130,
+      "type": "file"
+    },
+    {
+      "path": "AGENTS.md",
+      "accessCount": 1,
+      "lastAccessed": 1775203633806,
+      "type": "file"
+    },
+    {
+      "path": "vite.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1775203634519,
+      "type": "file"
+    },
+    {
+      "path": ".mcp.json",
+      "accessCount": 1,
+      "lastAccessed": 1775203650359,
+      "type": "file"
+    },
+    {
+      "path": ".cursor\\mcp.json",
+      "accessCount": 1,
+      "lastAccessed": 1775203650375,
+      "type": "file"
+    },
+    {
+      "path": "extensions\\checkout-ui\\src\\Checkout2.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775203981118,
+      "type": "file"
+    },
+    {
+      "path": "extensions\\checkout-ui\\package.json",
+      "accessCount": 1,
+      "lastAccessed": 1775204623502,
+      "type": "file"
+    },
+    {
+      "path": "app\\routes.js",
+      "accessCount": 1,
+      "lastAccessed": 1775211498896,
+      "type": "file"
+    },
+    {
+      "path": "app\\routes\\app.additional.jsx",
+      "accessCount": 1,
+      "lastAccessed": 1775211511110,
+      "type": "file"
+    },
+    {
+      "path": "app\\routes\\app._index.jsx",
+      "accessCount": 1,
+      "lastAccessed": 1775211557966,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

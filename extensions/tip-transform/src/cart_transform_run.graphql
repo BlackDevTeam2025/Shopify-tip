@@ -1,0 +1,32 @@
+query CartTransformRunInput {
+  cart {
+    lines {
+      id
+      quantity
+      tipSource: attribute(key: "tip_source") {
+        value
+      }
+      tipMode: attribute(key: "tip_mode") {
+        value
+      }
+      tipPercentage: attribute(key: "tip_percentage") {
+        value
+      }
+      tipAmount: attribute(key: "tip_amount") {
+        value
+      }
+      tipLabel: attribute(key: "tip_label") {
+        value
+      }
+      merchandise {
+        ... on ProductVariant {
+          id
+          title
+          product {
+            title
+          }
+        }
+      }
+    }
+  }
+}

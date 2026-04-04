@@ -1,0 +1,21 @@
+# Learn more about configuring your checkout UI extension:
+# https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration
+
+api_version = "2026-01"
+
+[[extensions]]
+name = "checkout-ui"
+handle = "checkout-ui"
+type = "ui_extension"
+uid = "fddfc370-27c7-c30f-4ee0-a927194e2accadefd40c"
+
+[[extensions.targeting]]
+module = "./src/Checkout.jsx"
+target = "purchase.checkout.reductions.render-after"
+
+[extensions.capabilities]
+api_access = true
+
+[[extensions.metafields]]
+namespace = "tip_block_settings"
+key = "config"
