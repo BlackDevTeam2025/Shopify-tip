@@ -1,4 +1,10 @@
-import { Form, redirect, useLoaderData, useNavigation } from "react-router";
+import {
+  Form,
+  redirect,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 import { getLifetimePlanDetails } from "../billing/config.server";
@@ -27,6 +33,23 @@ function throwEmbeddedRedirect(adminContext, url) {
   }
 
   throw redirect(url);
+}
+
+function normalizeBillingError(error) {
+  const userErrors = Array.isArray(error?.errorData) ? error.errorData : [];
+  const userMessages = userErrors
+    .map((entry) => entry?.message)
+    .filter(Boolean);
+
+  if (userMessages.length > 0) {
+    return userMessages.join(" ");
+  }
+
+  if (typeof error?.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  return "Shopify couldn't create the one-time charge for this store.";
 }
 
 export const loader = async ({ request }) => {
@@ -69,16 +92,31 @@ export const action = async ({ request }) => {
     throwEmbeddedRedirect(adminContext, "/app");
   }
 
-  await billing.request({
-    plan: getLifetimePlanDetails().plan,
-    isTest: shouldUseTestCharge(),
-    returnUrl: new URL("/app/license/confirm", request.url).toString(),
-  });
+  try {
+    await billing.request({
+      plan: getLifetimePlanDetails().plan,
+      isTest: shouldUseTestCharge(),
+      returnUrl: new URL("/app/license/confirm", request.url).toString(),
+    });
+  } catch (error) {
+    const billingError = normalizeBillingError(error);
+
+    console.error("Billing request failed", {
+      shop: session.shop,
+      billingError,
+      errorData: error?.errorData ?? null,
+    });
+
+    return {
+      billingError,
+    };
+  }
 
   return null;
 };
 
 export default function LicensePage() {
+  const actionData = useActionData();
   const {
     amount,
     currencyCode,
@@ -229,6 +267,9 @@ export default function LicensePage() {
                   </s-text>
                 </s-stack>
               </s-box>
+              {actionData?.billingError ? (
+                <s-banner tone="critical">{actionData.billingError}</s-banner>
+              ) : null}
               {isIneligible ? (
                 <s-banner tone="warning">
                   Upgrade this store to Shopify Plus, then come back to purchase
