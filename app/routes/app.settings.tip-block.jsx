@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
@@ -9,8 +9,8 @@ import { ensureTipCartTransform } from "../cart-transform.server.js";
 const styles = {
   page: {
     display: "grid",
-    gap: "24px",
-    maxWidth: "920px",
+    gap: "20px",
+    maxWidth: "980px",
     margin: "0 auto",
     width: "100%",
   },
@@ -31,7 +31,6 @@ const styles = {
     fontSize: "16px",
     lineHeight: 1.7,
     color: "#4b5563",
-    maxWidth: "52rem",
   },
   card: {
     background: "#ffffff",
@@ -41,111 +40,26 @@ const styles = {
     overflow: "hidden",
   },
   cardHeader: {
-    padding: "28px 30px 20px",
+    padding: "26px 30px 18px",
     borderBottom: "1px solid #eef2f7",
-    display: "grid",
-    gap: "10px",
-  },
-  cardBody: {
-    padding: "28px 30px",
-    display: "grid",
-    gap: "24px",
-  },
-  section: {
-    display: "grid",
-    gap: "14px",
-  },
-  sectionTitle: {
-    margin: 0,
-    fontSize: "16px",
-    fontWeight: 800,
-    color: "#111827",
-  },
-  sectionBody: {
-    margin: 0,
-    fontSize: "14px",
-    lineHeight: 1.6,
-    color: "#6b7280",
-  },
-  statusStrip: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-  },
-  statusBox: {
-    borderRadius: "18px",
-    border: "1px solid #e5e7eb",
-    background: "#f8fafc",
-    padding: "16px",
-    display: "grid",
-    gap: "6px",
-  },
-  statusLabel: {
-    margin: 0,
-    fontSize: "12px",
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#6b7280",
-  },
-  statusValue: {
-    margin: 0,
-    fontSize: "15px",
-    fontWeight: 700,
-    color: "#111827",
-  },
-  fieldGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "18px 20px",
-  },
-  fieldGroup: {
     display: "grid",
     gap: "8px",
   },
-  fieldFull: {
-    gridColumn: "1 / -1",
+  body: {
+    padding: "28px 30px",
+    display: "grid",
+    gap: "22px",
   },
-  label: {
-    fontSize: "13px",
-    fontWeight: 700,
-    color: "#111827",
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-  },
-  input: {
-    width: "100%",
-    borderRadius: "16px",
-    border: "1px solid #dbe1ea",
-    background: "#ffffff",
-    color: "#111827",
-    padding: "14px 16px",
-    fontSize: "15px",
-    lineHeight: 1.4,
-    boxSizing: "border-box",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: "108px",
-    borderRadius: "16px",
-    border: "1px solid #dbe1ea",
-    background: "#ffffff",
-    color: "#111827",
-    padding: "14px 16px",
-    fontSize: "15px",
-    lineHeight: 1.6,
-    boxSizing: "border-box",
-    resize: "vertical",
-    fontFamily: "inherit",
+  contentGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "18px",
   },
   toggleCard: {
     display: "flex",
     alignItems: "flex-start",
     gap: "14px",
-    padding: "16px 18px",
-    borderRadius: "18px",
-    border: "1px solid #dbe1ea",
-    background: "#ffffff",
+    padding: "0",
   },
   checkbox: {
     width: "20px",
@@ -164,8 +78,79 @@ const styles = {
     lineHeight: 1.6,
     color: "#6b7280",
   },
-  advancedDetails: {
+  presetsPanel: {
+    display: "grid",
+    gap: "18px",
+    padding: "22px",
     borderRadius: "20px",
+    border: "1px solid #e5e7eb",
+    background: "#f8fafc",
+  },
+  presetsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: "18px",
+  },
+  fieldGroup: {
+    display: "grid",
+    gap: "8px",
+  },
+  fieldFull: {
+    gridColumn: "1 / -1",
+  },
+  label: {
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  inputWrap: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    alignItems: "center",
+    borderRadius: "16px",
+    border: "1px solid #dbe1ea",
+    background: "#ffffff",
+    overflow: "hidden",
+  },
+  input: {
+    width: "100%",
+    border: "0",
+    background: "transparent",
+    color: "#111827",
+    padding: "14px 16px",
+    fontSize: "15px",
+    lineHeight: 1.4,
+    boxSizing: "border-box",
+    outline: "none",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "104px",
+    border: "1px solid #dbe1ea",
+    borderRadius: "16px",
+    background: "#ffffff",
+    color: "#111827",
+    padding: "14px 16px",
+    fontSize: "15px",
+    lineHeight: 1.6,
+    boxSizing: "border-box",
+    resize: "vertical",
+    fontFamily: "inherit",
+    outline: "none",
+  },
+  suffix: {
+    padding: "0 16px",
+    fontSize: "15px",
+    color: "#4b5563",
+    whiteSpace: "nowrap",
+  },
+  divider: {
+    height: "1px",
+    width: "100%",
+    background: "#e5e7eb",
+  },
+  advancedDetails: {
+    borderRadius: "18px",
     border: "1px solid #e5e7eb",
     background: "#fbfcfd",
     padding: "18px 20px",
@@ -175,6 +160,12 @@ const styles = {
     fontSize: "15px",
     fontWeight: 700,
     color: "#111827",
+  },
+  helper: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: 1.6,
+    color: "#6b7280",
   },
   actionBar: {
     padding: "20px 30px",
@@ -196,6 +187,19 @@ const styles = {
 
 function cloneConfig(config) {
   return { ...config };
+}
+
+function splitPresetValues(csv) {
+  const values = String(csv ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  return {
+    preset_1: values[0] ?? "10",
+    preset_2: values[1] ?? "15",
+    preset_3: values[2] ?? "20",
+  };
 }
 
 export const loader = async ({ request }) => {
@@ -270,6 +274,10 @@ export default function TipBlockSettings() {
   const saved = fetcher.data?.saved === true;
   const errors = fetcher.data?.errors;
   const isDirty = JSON.stringify(draftConfig) !== JSON.stringify(currentConfig);
+  const presetValues = useMemo(
+    () => splitPresetValues(draftConfig.tip_percentages),
+    [draftConfig.tip_percentages],
+  );
 
   useEffect(() => {
     setDraftConfig(cloneConfig(currentConfig));
@@ -282,43 +290,38 @@ export default function TipBlockSettings() {
     }));
   };
 
+  const updatePreset = (field, value) => {
+    const nextValues = {
+      ...splitPresetValues(draftConfig.tip_percentages),
+      [field]: value,
+    };
+
+    updateDraft(
+      "tip_percentages",
+      [nextValues.preset_1, nextValues.preset_2, nextValues.preset_3].join(","),
+    );
+  };
+
   return (
     <s-page title="Tip Settings">
       <div style={styles.page}>
         <div style={styles.hero}>
           <h1 style={styles.title}>Tipping</h1>
-          <p style={styles.subtitle}>
-            Configure the checkout tip block. This screen now only keeps the
-            runtime settings that materially affect the buyer experience.
-          </p>
+          <p style={styles.subtitle}>Edit the tip choices shown at checkout.</p>
         </div>
 
         <fetcher.Form method="POST" style={styles.card}>
-          <div style={styles.cardHeader}>
-            <div style={styles.statusStrip}>
-              <div style={styles.statusBox}>
-                <p style={styles.statusLabel}>Billing</p>
-                <p style={styles.statusValue}>
-                  {currentConfig.enabled ? "Active" : "Blocked"}
-                </p>
-              </div>
-              <div style={styles.statusBox}>
-                <p style={styles.statusLabel}>Cart Transform</p>
-                <p style={styles.statusValue}>
-                  {transformStatus?.active ? "Active" : "Not active"}
-                </p>
-              </div>
-            </div>
-            {transformStatus?.errors?.length > 0 ? (
+          {transformStatus?.errors?.length > 0 ? (
+            <div style={styles.cardHeader}>
               <s-banner tone="warning">
                 {transformStatus.errors
                   .map((error) => error.message)
                   .join(", ")}
               </s-banner>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
-          <div style={styles.cardBody}>
+          <div style={styles.body}>
             <input
               type="hidden"
               name="custom_text_color"
@@ -329,18 +332,29 @@ export default function TipBlockSettings() {
               name="custom_border_color"
               value={draftConfig.custom_border_color}
             />
+            <input type="hidden" name="custom_amount_enabled" value="on" />
 
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Checkout copy</h2>
-              <p style={styles.sectionBody}>
-                Fixed presets stay at 15%, 18%, 25%, Custom, and None. You only
-                edit the text and behavior here.
-              </p>
-              <div style={styles.fieldGrid}>
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="heading" style={styles.label}>
-                    Heading
-                  </label>
+            <label style={styles.toggleCard}>
+              <input
+                type="checkbox"
+                checked={currentConfig.enabled}
+                disabled
+                readOnly
+                style={styles.checkbox}
+              />
+              <div>
+                <p style={styles.checkboxTitle}>
+                  Show tipping options at checkout
+                </p>
+              </div>
+            </label>
+
+            <div style={styles.contentGrid}>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="heading" style={styles.label}>
+                  Title
+                </label>
+                <div style={styles.inputWrap}>
                   <input
                     id="heading"
                     name="heading"
@@ -352,11 +366,13 @@ export default function TipBlockSettings() {
                     placeholder="Add tip"
                   />
                 </div>
+              </div>
 
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="cta_label" style={styles.label}>
-                    Button label
-                  </label>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="cta_label" style={styles.label}>
+                  Button label
+                </label>
+                <div style={styles.inputWrap}>
                   <input
                     id="cta_label"
                     name="cta_label"
@@ -368,27 +384,29 @@ export default function TipBlockSettings() {
                     placeholder="Add tip"
                   />
                 </div>
+              </div>
 
-                <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
-                  <label htmlFor="support_text" style={styles.label}>
-                    Support text
-                  </label>
-                  <textarea
-                    id="support_text"
-                    name="support_text"
-                    value={draftConfig.support_text}
-                    onChange={(event) =>
-                      updateDraft("support_text", event.target.value)
-                    }
-                    style={styles.textarea}
-                    placeholder="Show your support for the team."
-                  />
-                </div>
+              <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
+                <label htmlFor="support_text" style={styles.label}>
+                  Support text
+                </label>
+                <textarea
+                  id="support_text"
+                  name="support_text"
+                  value={draftConfig.support_text}
+                  onChange={(event) =>
+                    updateDraft("support_text", event.target.value)
+                  }
+                  style={styles.textarea}
+                  placeholder="Show your support for the team."
+                />
+              </div>
 
-                <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
-                  <label htmlFor="thank_you_text" style={styles.label}>
-                    Thank you text
-                  </label>
+              <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
+                <label htmlFor="thank_you_text" style={styles.label}>
+                  Thank you text
+                </label>
+                <div style={styles.inputWrap}>
                   <input
                     id="thank_you_text"
                     name="thank_you_text"
@@ -403,57 +421,93 @@ export default function TipBlockSettings() {
               </div>
             </div>
 
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Behavior</h2>
-              <div style={styles.section}>
-                <label style={styles.toggleCard}>
-                  <input
-                    type="checkbox"
-                    name="hide_until_opt_in"
-                    checked={draftConfig.hide_until_opt_in}
-                    onChange={(event) =>
-                      updateDraft("hide_until_opt_in", event.target.checked)
-                    }
-                    style={styles.checkbox}
-                  />
-                  <div>
-                    <p style={styles.checkboxTitle}>
-                      Hide tip choices until the buyer opts in
-                    </p>
-                    <p style={styles.checkboxHelp}>
-                      Starts collapsed, then reveals the full choice set after
-                      the buyer opens the block.
-                    </p>
+            <div style={styles.presetsPanel}>
+              <div style={styles.presetsGrid}>
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="preset_1" style={styles.label}>
+                    Preset 1
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="preset_1"
+                      name="preset_1"
+                      inputMode="decimal"
+                      value={presetValues.preset_1}
+                      onChange={(event) =>
+                        updatePreset("preset_1", event.target.value)
+                      }
+                      style={styles.input}
+                    />
+                    <span style={styles.suffix}>%</span>
                   </div>
-                </label>
+                </div>
 
-                <label style={styles.toggleCard}>
-                  <input
-                    type="checkbox"
-                    name="custom_amount_enabled"
-                    checked={draftConfig.custom_amount_enabled}
-                    onChange={(event) =>
-                      updateDraft("custom_amount_enabled", event.target.checked)
-                    }
-                    style={styles.checkbox}
-                  />
-                  <div>
-                    <p style={styles.checkboxTitle}>Allow custom amount</p>
-                    <p style={styles.checkboxHelp}>
-                      Keeps the buyer-entered custom tip amount field available.
-                    </p>
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="preset_2" style={styles.label}>
+                    Preset 2
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="preset_2"
+                      name="preset_2"
+                      inputMode="decimal"
+                      value={presetValues.preset_2}
+                      onChange={(event) =>
+                        updatePreset("preset_2", event.target.value)
+                      }
+                      style={styles.input}
+                    />
+                    <span style={styles.suffix}>%</span>
                   </div>
-                </label>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="preset_3" style={styles.label}>
+                    Preset 3
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="preset_3"
+                      name="preset_3"
+                      inputMode="decimal"
+                      value={presetValues.preset_3}
+                      onChange={(event) =>
+                        updatePreset("preset_3", event.target.value)
+                      }
+                      style={styles.input}
+                    />
+                    <span style={styles.suffix}>%</span>
+                  </div>
+                </div>
               </div>
+
+              <div style={styles.divider} />
+
+              <label style={styles.toggleCard}>
+                <input
+                  type="checkbox"
+                  name="hide_until_opt_in"
+                  checked={draftConfig.hide_until_opt_in}
+                  onChange={(event) =>
+                    updateDraft("hide_until_opt_in", event.target.checked)
+                  }
+                  style={styles.checkbox}
+                />
+                <div>
+                  <p style={styles.checkboxTitle}>
+                    Hide tip choices until the buyer opts in
+                  </p>
+                </div>
+              </label>
             </div>
 
             <details style={styles.advancedDetails}>
               <summary style={styles.advancedSummary}>Advanced</summary>
-              <div style={{ ...styles.section, marginTop: "18px" }}>
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="tip_variant_id" style={styles.label}>
-                    Tip variant ID
-                  </label>
+              <div style={{ ...styles.fieldGroup, marginTop: "18px" }}>
+                <label htmlFor="tip_variant_id" style={styles.label}>
+                  Tip variant ID
+                </label>
+                <div style={styles.inputWrap}>
                   <input
                     id="tip_variant_id"
                     name="tip_variant_id"
@@ -464,11 +518,11 @@ export default function TipBlockSettings() {
                     style={styles.input}
                     placeholder="gid://shopify/ProductVariant/123456789"
                   />
-                  <p style={styles.sectionBody}>
-                    Required for the extension to add or update the tip line in
-                    checkout.
-                  </p>
                 </div>
+                <p style={styles.helper}>
+                  Required for the extension to add or update the tip line in
+                  checkout.
+                </p>
               </div>
             </details>
           </div>

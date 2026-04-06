@@ -8,15 +8,14 @@ import {
   DEFAULT_HEADING,
   DEFAULT_SUPPORT_TEXT,
   DEFAULT_THANK_YOU_TEXT,
-  FIXED_TIP_PERCENTAGES,
-  FIXED_TIP_PERCENTAGES_LABEL,
+  DEFAULT_TIP_PERCENTAGES,
   buildTipConfigFromFormData,
   buildTipRuntimeConfig,
+  ensureTipConfigRuntimeState,
   getDefaultTipConfig,
   getTipConfigSyncPayload,
   normalizeProductVariantId,
   parseTipConfigValue,
-  ensureTipConfigRuntimeState,
 } from "../../app/tip-config.server.js";
 
 test("parseTipConfigValue falls back to defaults for empty input", () => {
@@ -48,17 +47,21 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     support_text: "Thank you for supporting the staff.",
     thank_you_text: "THANK YOU.",
     cta_label: DEFAULT_CTA_LABEL,
+    tip_percentages: "5,10,15",
     custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
     custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });
 });
 
-test("buildTipConfigFromFormData normalizes the new admin settings payload", () => {
+test("buildTipConfigFromFormData normalizes the compact admin settings payload", () => {
   const formData = new FormData();
   formData.set("heading", "Add gratuity");
   formData.set("support_text", "Show your support.");
   formData.set("thank_you_text", "THANK YOU, TEAM.");
   formData.set("cta_label", "Add tip now");
+  formData.set("preset_1", "12");
+  formData.set("preset_2", "16");
+  formData.set("preset_3", "21");
   formData.set("custom_amount_enabled", "on");
   formData.set("hide_until_opt_in", "on");
   formData.set("tip_variant_id", "1");
@@ -75,9 +78,32 @@ test("buildTipConfigFromFormData normalizes the new admin settings payload", () 
     support_text: "Show your support.",
     thank_you_text: "THANK YOU, TEAM.",
     cta_label: "Add tip now",
+    tip_percentages: "12,16,21",
     custom_text_color: "#1A1C1E",
     custom_border_color: "#737785",
   });
+});
+
+test("buildTipRuntimeConfig keeps only three valid editable presets", () => {
+  const runtimeConfig = buildTipRuntimeConfig({
+    savedConfig: {
+      tip_percentages: "12, 16, 21, 30, 45",
+    },
+    enabled: true,
+  });
+
+  assert.equal(runtimeConfig.tip_percentages, "12,16,21");
+});
+
+test("buildTipRuntimeConfig falls back to defaults for invalid preset values", () => {
+  const runtimeConfig = buildTipRuntimeConfig({
+    savedConfig: {
+      tip_percentages: "0,nope,999",
+    },
+    enabled: true,
+  });
+
+  assert.equal(runtimeConfig.tip_percentages, DEFAULT_TIP_PERCENTAGES);
 });
 
 test("buildTipRuntimeConfig normalizes new booleans and hex colors", () => {
@@ -133,6 +159,7 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
       support_text: "a",
       thank_you_text: "c",
       cta_label: DEFAULT_CTA_LABEL,
+      tip_percentages: "10,15,20",
       custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
       custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
     },
@@ -151,6 +178,7 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
     support_text: "a",
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
+    tip_percentages: "12,16,21",
     custom_text_color: "#111111",
     custom_border_color: "#222222",
   };
@@ -166,8 +194,7 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
   });
 });
 
-test("getDefaultTipConfig uses the new fixed-preset friendly defaults", () => {
-  assert.equal(FIXED_TIP_PERCENTAGES_LABEL, FIXED_TIP_PERCENTAGES.join(","));
+test("getDefaultTipConfig uses editable three-preset defaults", () => {
   assert.deepEqual(getDefaultTipConfig(), {
     enabled: false,
     plus_only: true,
@@ -179,6 +206,7 @@ test("getDefaultTipConfig uses the new fixed-preset friendly defaults", () => {
     support_text: DEFAULT_SUPPORT_TEXT,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
+    tip_percentages: DEFAULT_TIP_PERCENTAGES,
     custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
     custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });

@@ -3,10 +3,10 @@ import { render } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { getTipRuntimeConfigFromAppMetafields } from "./runtime-config";
 import {
-  FIXED_TIP_PERCENTAGES,
   calculateSubtotalTipAmount,
   formatPercentageTipLabel,
   isValidCustomAmount,
+  parseTipPercentages,
 } from "./tip-percentages";
 
 const TIP_SOURCE_ATTRIBUTE = "_tip_source";
@@ -15,9 +15,6 @@ const TIP_PERCENTAGE_ATTRIBUTE = "_tip_percentage";
 const TIP_AMOUNT_ATTRIBUTE = "_tip_amount";
 const TIP_LABEL_ATTRIBUTE = "_tip_label";
 const TIP_SOURCE_VALUE = "dynamic_subtotal";
-const DEFAULT_SELECTION = String(
-  FIXED_TIP_PERCENTAGES[1] ?? FIXED_TIP_PERCENTAGES[0] ?? "18",
-);
 
 function formatCurrency(amount, currencyCode = "USD") {
   try {
@@ -111,6 +108,7 @@ function getInitialSelection({
   existingTipLine,
   hideUntilOptIn,
   customAmountEnabled,
+  percentages,
 }) {
   const savedMode = getAttributeValue(
     existingTipLine?.attributes,
@@ -139,7 +137,7 @@ function getInitialSelection({
 
   if (
     savedMode === "percentage" &&
-    FIXED_TIP_PERCENTAGES.includes(Number(savedPercentage))
+    percentages.includes(Number(savedPercentage))
   ) {
     return {
       selectedTip: savedPercentage,
@@ -149,14 +147,19 @@ function getInitialSelection({
   }
 
   return {
-    selectedTip: DEFAULT_SELECTION,
+    selectedTip: String(percentages[1] ?? percentages[0] ?? 15),
     customAmount: "",
     optionsExpanded: !hideUntilOptIn,
   };
 }
 
-function buildTipChoices({ subtotal, currencyCode, customAmountEnabled }) {
-  const fixedChoices = FIXED_TIP_PERCENTAGES.map((percentage) => ({
+function buildTipChoices({
+  subtotal,
+  currencyCode,
+  customAmountEnabled,
+  percentages,
+}) {
+  const fixedChoices = percentages.map((percentage) => ({
     key: String(percentage),
     primaryLabel: `${percentage}%`,
     secondaryLabel: formatCurrency(
@@ -200,12 +203,14 @@ function TipBlockExtension() {
   const instructions = shopify.instructions?.value;
   const applyCartLinesChange = shopify.applyCartLinesChange;
   const currencyCode = lines?.[0]?.cost?.totalAmount?.currencyCode ?? "USD";
+  const percentages = parseTipPercentages(settings.tip_percentages);
   const existingTipLine = findTipLine(lines, tipVariantId);
   const subtotal = getCheckoutSubtotal(lines, tipVariantId);
   const initialSelection = getInitialSelection({
     existingTipLine,
     hideUntilOptIn: settings.hide_until_opt_in,
     customAmountEnabled: settings.custom_amount_enabled,
+    percentages,
   });
   const [selectedTip, setSelectedTip] = useState(initialSelection.selectedTip);
   const [customAmount, setCustomAmount] = useState(
@@ -223,8 +228,9 @@ function TipBlockExtension() {
         subtotal,
         currencyCode,
         customAmountEnabled: settings.custom_amount_enabled,
+        percentages,
       }),
-    [currencyCode, settings.custom_amount_enabled, subtotal],
+    [currencyCode, percentages, settings.custom_amount_enabled, subtotal],
   );
 
   useEffect(() => {
@@ -232,6 +238,7 @@ function TipBlockExtension() {
       existingTipLine,
       hideUntilOptIn: settings.hide_until_opt_in,
       customAmountEnabled: settings.custom_amount_enabled,
+      percentages,
     });
 
     setSelectedTip(nextSelection.selectedTip);
@@ -244,6 +251,7 @@ function TipBlockExtension() {
     getAttributeValue(existingTipLine?.attributes, TIP_AMOUNT_ATTRIBUTE),
     settings.hide_until_opt_in,
     settings.custom_amount_enabled,
+    percentages.join(","),
   ]);
 
   const isCustomSelected = selectedTip === "custom";
@@ -396,7 +404,7 @@ function TipBlockExtension() {
         throw new Error(result.message ?? "Unknown error");
       }
 
-      setSelectedTip(DEFAULT_SELECTION);
+      setSelectedTip(String(percentages[1] ?? percentages[0] ?? 15));
       setCustomAmount("");
       setOptionsExpanded(!settings.hide_until_opt_in);
       setSuccessMessage("Tip removed from the checkout.");

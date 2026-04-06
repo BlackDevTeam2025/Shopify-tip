@@ -1,4 +1,4 @@
-export const FIXED_TIP_PERCENTAGES = Object.freeze([15, 18, 25]);
+export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 
 function formatCurrency(amount, currencyCode = "USD") {
   try {
@@ -11,6 +11,31 @@ function formatCurrency(amount, currencyCode = "USD") {
   } catch {
     return `${currencyCode} ${amount.toFixed(2)}`;
   }
+}
+
+function normalizePresetEntry(value, fallback) {
+  const parsed = Number.parseFloat(String(value ?? "").trim());
+
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+export function parseTipPercentages(raw, fallback = DEFAULT_TIP_PERCENTAGES) {
+  const fallbackParts = String(fallback)
+    .split(",")
+    .map((entry) => Number.parseFloat(entry.trim()))
+    .filter((entry) => Number.isFinite(entry) && entry > 0 && entry <= 100);
+  const parsed = String(raw ?? "")
+    .split(",")
+    .map((value) => Number.parseFloat(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0 && value <= 100);
+
+  return [0, 1, 2].map((index) =>
+    normalizePresetEntry(parsed[index], fallbackParts[index] ?? 10),
+  );
 }
 
 export function roundCurrencyAmount(amount) {

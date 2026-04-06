@@ -1,6 +1,6 @@
 export const TIP_CONFIG_NAMESPACE = "tip_block_settings";
 export const TIP_CONFIG_KEY = "config";
-export const FIXED_TIP_PERCENTAGES = Object.freeze([15, 18, 25]);
+export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 
 const DEFAULTS = {
   enabled: false,
@@ -13,6 +13,7 @@ const DEFAULTS = {
   support_text: "Show your support for the team.",
   thank_you_text: "THANK YOU, WE APPRECIATE IT.",
   cta_label: "Add tip",
+  tip_percentages: DEFAULT_TIP_PERCENTAGES,
   custom_text_color: "#1A1C1E",
   custom_border_color: "#737785",
 };
@@ -47,6 +48,33 @@ function normalizeHexColor(value, fallback) {
   }
 
   return fallback;
+}
+
+function normalizePresetEntry(value, fallback) {
+  const parsed = Number.parseFloat(String(value ?? "").trim());
+
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100) {
+    return fallback;
+  }
+
+  return String(parsed);
+}
+
+function normalizeTipPercentages(value, fallback = DEFAULT_TIP_PERCENTAGES) {
+  const fallbackParts = String(fallback)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const parsed = String(value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const normalized = [0, 1, 2].map((index) =>
+    normalizePresetEntry(parsed[index], fallbackParts[index] ?? "10"),
+  );
+
+  return normalized.join(",");
 }
 
 export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
@@ -97,6 +125,10 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         DEFAULTS.thank_you_text,
       ),
       cta_label: normalizeText(parsed.cta_label, DEFAULTS.cta_label),
+      tip_percentages: normalizeTipPercentages(
+        parsed.tip_percentages,
+        DEFAULTS.tip_percentages,
+      ),
       custom_text_color: normalizeHexColor(
         parsed.custom_text_color,
         DEFAULTS.custom_text_color,

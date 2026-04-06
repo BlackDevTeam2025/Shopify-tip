@@ -1,7 +1,6 @@
 export const TIP_CONFIG_NAMESPACE = "tip_block_settings";
 export const TIP_CONFIG_KEY = "config";
-export const FIXED_TIP_PERCENTAGES = Object.freeze([15, 18, 25]);
-export const FIXED_TIP_PERCENTAGES_LABEL = FIXED_TIP_PERCENTAGES.join(",");
+export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 export const DEFAULT_HEADING = "Add tip";
 export const DEFAULT_SUPPORT_TEXT = "Show your support for the team.";
 export const DEFAULT_THANK_YOU_TEXT = "THANK YOU, WE APPRECIATE IT.";
@@ -43,6 +42,36 @@ function normalizeHexColor(value, fallback) {
   }
 
   return fallback;
+}
+
+function normalizePresetEntry(value, fallback) {
+  const parsed = Number.parseFloat(String(value ?? "").trim());
+
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100) {
+    return fallback;
+  }
+
+  return parsed % 1 === 0 ? String(parsed) : String(parsed);
+}
+
+function normalizeTipPercentages(
+  savedValue,
+  fallback = DEFAULT_TIP_PERCENTAGES,
+) {
+  const fallbackParts = String(fallback)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const parsed = String(savedValue ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const normalized = [0, 1, 2].map((index) =>
+    normalizePresetEntry(parsed[index], fallbackParts[index] ?? "10"),
+  );
+
+  return normalized.join(",");
 }
 
 function getLegacySupportText(
@@ -101,6 +130,7 @@ export function getDefaultTipConfig() {
     support_text: DEFAULT_SUPPORT_TEXT,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
+    tip_percentages: DEFAULT_TIP_PERCENTAGES,
     custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
     custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   };
@@ -155,6 +185,10 @@ export function buildTipRuntimeConfig({
     support_text: getLegacySupportText(savedConfig, defaults.support_text),
     thank_you_text: getLegacyThankYouText(savedConfig, defaults.thank_you_text),
     cta_label: normalizeText(savedConfig.cta_label, defaults.cta_label),
+    tip_percentages: normalizeTipPercentages(
+      savedConfig.tip_percentages,
+      defaults.tip_percentages,
+    ),
     custom_text_color: normalizeHexColor(
       savedConfig.custom_text_color,
       defaults.custom_text_color,
@@ -193,10 +227,16 @@ export function getTipConfigSyncPayload({ storedValue, enabled = false }) {
 }
 
 export function buildTipConfigFromFormData(formData) {
+  const presetValues = [
+    formData.get("preset_1"),
+    formData.get("preset_2"),
+    formData.get("preset_3"),
+  ];
+
   return {
     plus_only: true,
     transform_active: false,
-    custom_amount_enabled: formData.get("custom_amount_enabled") === "on",
+    custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",
     hide_until_opt_in: formData.get("hide_until_opt_in") === "on",
     tip_variant_id: normalizeProductVariantId(
       formData.get("tip_variant_id") || "",
@@ -211,6 +251,7 @@ export function buildTipConfigFromFormData(formData) {
       DEFAULT_THANK_YOU_TEXT,
     ),
     cta_label: normalizeText(formData.get("cta_label"), DEFAULT_CTA_LABEL),
+    tip_percentages: normalizeTipPercentages(presetValues.join(",")),
     custom_text_color: normalizeHexColor(
       formData.get("custom_text_color"),
       DEFAULT_CUSTOM_TEXT_COLOR,
