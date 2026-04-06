@@ -12,10 +12,14 @@ const NO_CHANGES = {
   operations: [],
 };
 
-const TIP_SOURCE_VALUE = 'dynamic_subtotal';
+const TIP_SOURCE_VALUE = "dynamic_subtotal";
+
+function getAttributeValue(line, privateKey, legacyKey) {
+  return line?.[privateKey]?.value ?? line?.[legacyKey]?.value ?? null;
+}
 
 function normalizeMoney(value) {
-  const amount = Number.parseFloat(String(value ?? '').trim());
+  const amount = Number.parseFloat(String(value ?? "").trim());
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return null;
@@ -31,9 +35,15 @@ function normalizeMoney(value) {
 export function cartTransformRun(input) {
   const lines = input?.cart?.lines ?? [];
   const operations = lines
-    .filter((line) => line?.tipSource?.value === TIP_SOURCE_VALUE)
+    .filter(
+      (line) =>
+        getAttributeValue(line, "tipSource", "legacyTipSource") ===
+        TIP_SOURCE_VALUE,
+    )
     .map((line) => {
-      const normalizedAmount = normalizeMoney(line?.tipAmount?.value);
+      const normalizedAmount = normalizeMoney(
+        getAttributeValue(line, "tipAmount", "legacyTipAmount"),
+      );
 
       if (!normalizedAmount) {
         return null;
@@ -42,7 +52,7 @@ export function cartTransformRun(input) {
       return {
         lineUpdate: {
           cartLineId: line.id,
-          title: line?.tipLabel?.value ?? 'Tip',
+          title: getAttributeValue(line, "tipLabel", "legacyTipLabel") ?? "Tip",
           price: {
             adjustment: {
               fixedPricePerUnit: {
@@ -59,5 +69,5 @@ export function cartTransformRun(input) {
     return NO_CHANGES;
   }
 
-  return {operations};
+  return { operations };
 }

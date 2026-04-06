@@ -26,7 +26,9 @@ function normalizeText(value, fallback) {
 }
 
 function normalizeHexColor(value, fallback) {
-  const normalized = String(value ?? "").trim().replace(/^#/, "");
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/^#/, "");
 
   if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
     return `#${normalized.toUpperCase()}`;
@@ -43,7 +45,10 @@ function normalizeHexColor(value, fallback) {
   return fallback;
 }
 
-function getLegacySupportText(savedConfig = {}, fallback = DEFAULT_SUPPORT_TEXT) {
+function getLegacySupportText(
+  savedConfig = {},
+  fallback = DEFAULT_SUPPORT_TEXT,
+) {
   return normalizeText(
     savedConfig.support_text ?? savedConfig.caption1,
     fallback,
@@ -54,7 +59,10 @@ function getLegacyThankYouText(
   savedConfig = {},
   fallback = DEFAULT_THANK_YOU_TEXT,
 ) {
-  return normalizeText(savedConfig.thank_you_text ?? savedConfig.caption3, fallback);
+  return normalizeText(
+    savedConfig.thank_you_text ?? savedConfig.caption3,
+    fallback,
+  );
 }
 
 export function normalizeProductVariantId(value) {
@@ -190,9 +198,14 @@ export function buildTipConfigFromFormData(formData) {
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") === "on",
     hide_until_opt_in: formData.get("hide_until_opt_in") === "on",
-    tip_variant_id: normalizeProductVariantId(formData.get("tip_variant_id") || ""),
+    tip_variant_id: normalizeProductVariantId(
+      formData.get("tip_variant_id") || "",
+    ),
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
-    support_text: normalizeText(formData.get("support_text"), DEFAULT_SUPPORT_TEXT),
+    support_text: normalizeText(
+      formData.get("support_text"),
+      DEFAULT_SUPPORT_TEXT,
+    ),
     thank_you_text: normalizeText(
       formData.get("thank_you_text"),
       DEFAULT_THANK_YOU_TEXT,
@@ -236,7 +249,7 @@ export async function ensureTipConfigRuntimeState(admin, enabled) {
     enabled,
   });
 
-  if (!needsSync || !value) {
+  if (!needsSync && value) {
     return {
       synced: false,
       config,
@@ -313,7 +326,14 @@ export async function saveTipConfig(admin, config) {
   };
 }
 
-export async function syncTipConfigEnabled(admin, enabled, transformActive = false) {
-  const currentConfig = await loadTipConfig(admin, { enabled, transformActive });
+export async function syncTipConfigEnabled(
+  admin,
+  enabled,
+  transformActive = false,
+) {
+  const currentConfig = await loadTipConfig(admin, {
+    enabled,
+    transformActive,
+  });
   return saveTipConfig(admin, currentConfig);
 }

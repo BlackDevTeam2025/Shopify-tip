@@ -3,19 +3,34 @@ query CartTransformRunInput {
     lines {
       id
       quantity
-      tipSource: attribute(key: "tip_source") {
+      tipSource: attribute(key: "_tip_source") {
         value
       }
-      tipMode: attribute(key: "tip_mode") {
+      legacyTipSource: attribute(key: "tip_source") {
         value
       }
-      tipPercentage: attribute(key: "tip_percentage") {
+      tipMode: attribute(key: "_tip_mode") {
         value
       }
-      tipAmount: attribute(key: "tip_amount") {
+      legacyTipMode: attribute(key: "tip_mode") {
         value
       }
-      tipLabel: attribute(key: "tip_label") {
+      tipPercentage: attribute(key: "_tip_percentage") {
+        value
+      }
+      legacyTipPercentage: attribute(key: "tip_percentage") {
+        value
+      }
+      tipAmount: attribute(key: "_tip_amount") {
+        value
+      }
+      legacyTipAmount: attribute(key: "tip_amount") {
+        value
+      }
+      tipLabel: attribute(key: "_tip_label") {
+        value
+      }
+      legacyTipLabel: attribute(key: "tip_label") {
         value
       }
       merchandise {

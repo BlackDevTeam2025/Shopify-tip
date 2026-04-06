@@ -30,7 +30,9 @@ function normalizeText(value, fallback) {
 }
 
 function normalizeHexColor(value, fallback) {
-  const normalized = String(value ?? "").trim().replace(/^#/, "");
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/^#/, "");
 
   if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
     return `#${normalized.toUpperCase()}`;
@@ -78,8 +80,14 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         parsed.hide_until_opt_in,
         DEFAULTS.hide_until_opt_in,
       ),
-      tip_variant_id: normalizeText(parsed.tip_variant_id, DEFAULTS.tip_variant_id),
-      heading: normalizeText(parsed.heading ?? parsed.widget_title, DEFAULTS.heading),
+      tip_variant_id: normalizeText(
+        parsed.tip_variant_id,
+        DEFAULTS.tip_variant_id,
+      ),
+      heading: normalizeText(
+        parsed.heading ?? parsed.widget_title,
+        DEFAULTS.heading,
+      ),
       support_text: normalizeText(
         parsed.support_text ?? parsed.caption1,
         DEFAULTS.support_text,

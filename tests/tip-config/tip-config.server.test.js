@@ -2,89 +2,99 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  DEFAULT_CTA_LABEL,
+  DEFAULT_CUSTOM_BORDER_COLOR,
+  DEFAULT_CUSTOM_TEXT_COLOR,
+  DEFAULT_HEADING,
+  DEFAULT_SUPPORT_TEXT,
+  DEFAULT_THANK_YOU_TEXT,
+  FIXED_TIP_PERCENTAGES,
+  FIXED_TIP_PERCENTAGES_LABEL,
   buildTipConfigFromFormData,
   buildTipRuntimeConfig,
   getDefaultTipConfig,
   getTipConfigSyncPayload,
   normalizeProductVariantId,
   parseTipConfigValue,
+  ensureTipConfigRuntimeState,
 } from "../../app/tip-config.server.js";
 
 test("parseTipConfigValue falls back to defaults for empty input", () => {
   assert.deepEqual(parseTipConfigValue(undefined), getDefaultTipConfig());
 });
 
-test("buildTipRuntimeConfig merges saved values and enabled flag", () => {
+test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", () => {
   const runtimeConfig = buildTipRuntimeConfig({
     savedConfig: {
       widget_title: "Support our crew",
-      caption1: "Thank you",
+      caption1: "Thank you for supporting the staff.",
+      caption3: "THANK YOU.",
       tip_percentages: "5,10,15,18,20",
-      percentage_display_option: "percentage_and_amount",
+      percentage_display_option: "amount_first",
+      custom_amount_enabled: "false",
+      tip_variant_id: "44334137737309",
     },
     enabled: true,
   });
 
   assert.deepEqual(runtimeConfig, {
     enabled: true,
-    widget_title: "Support our crew",
-    tip_percentages: "5,10,15,18,20",
-    percentage_display_option: "percentage_and_amount",
     plus_only: true,
     transform_active: false,
-    custom_amount_enabled: true,
-    tip_variant_id: "",
-    caption1: "Thank you",
-    caption2: "Leave a small tip",
-    caption3: "Every bit helps!",
+    custom_amount_enabled: false,
+    hide_until_opt_in: false,
+    tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
+    heading: "Support our crew",
+    support_text: "Thank you for supporting the staff.",
+    thank_you_text: "THANK YOU.",
+    cta_label: DEFAULT_CTA_LABEL,
+    custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
+    custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });
 });
 
-test("buildTipRuntimeConfig normalizes legacy string booleans", () => {
+test("buildTipConfigFromFormData normalizes the new admin settings payload", () => {
+  const formData = new FormData();
+  formData.set("heading", "Add gratuity");
+  formData.set("support_text", "Show your support.");
+  formData.set("thank_you_text", "THANK YOU, TEAM.");
+  formData.set("cta_label", "Add tip now");
+  formData.set("custom_amount_enabled", "on");
+  formData.set("hide_until_opt_in", "on");
+  formData.set("tip_variant_id", "1");
+  formData.set("custom_text_color", "1a1c1e");
+  formData.set("custom_border_color", "#737785");
+
+  assert.deepEqual(buildTipConfigFromFormData(formData), {
+    plus_only: true,
+    transform_active: false,
+    custom_amount_enabled: true,
+    hide_until_opt_in: true,
+    tip_variant_id: "gid://shopify/ProductVariant/1",
+    heading: "Add gratuity",
+    support_text: "Show your support.",
+    thank_you_text: "THANK YOU, TEAM.",
+    cta_label: "Add tip now",
+    custom_text_color: "#1A1C1E",
+    custom_border_color: "#737785",
+  });
+});
+
+test("buildTipRuntimeConfig normalizes new booleans and hex colors", () => {
   const runtimeConfig = buildTipRuntimeConfig({
     savedConfig: {
       custom_amount_enabled: "false",
+      hide_until_opt_in: "true",
+      custom_text_color: "abc",
+      custom_border_color: "xyz",
     },
     enabled: true,
   });
 
   assert.equal(runtimeConfig.custom_amount_enabled, false);
-});
-
-test("buildTipConfigFromFormData normalizes settings payload", () => {
-  const formData = new FormData();
-  formData.set("widget_title", "Support our team");
-  formData.set("tip_percentages", "5,10");
-  formData.set("percentage_display_option", "amount_first");
-  formData.set("custom_amount_enabled", "on");
-  formData.set("tip_variant_id", "1");
-  formData.set("caption1", "A");
-  formData.set("caption2", "B");
-  formData.set("caption3", "C");
-
-  assert.deepEqual(buildTipConfigFromFormData(formData), {
-    widget_title: "Support our team",
-    tip_percentages: "5,10",
-    percentage_display_option: "amount_first",
-    plus_only: true,
-    transform_active: false,
-    custom_amount_enabled: true,
-    tip_variant_id: "gid://shopify/ProductVariant/1",
-    caption1: "A",
-    caption2: "B",
-    caption3: "C",
-  });
-});
-
-test("buildTipRuntimeConfig replaces legacy fixed-amount presets with safe percentage defaults", () => {
-  const runtimeConfig = buildTipRuntimeConfig({
-    savedConfig: {
-      tip_percentages: "10000,20000,50000",
-    },
-    enabled: true,
-  });
-
-  assert.equal(runtimeConfig.tip_percentages, "5,10,15,18,20");
+  assert.equal(runtimeConfig.hide_until_opt_in, true);
+  assert.equal(runtimeConfig.custom_text_color, "#AABBCC");
+  assert.equal(runtimeConfig.custom_border_color, DEFAULT_CUSTOM_BORDER_COLOR);
 });
 
 test("normalizeProductVariantId accepts raw numeric IDs", () => {
@@ -103,21 +113,7 @@ test("normalizeProductVariantId accepts admin variant URLs", () => {
   );
 });
 
-test("buildTipRuntimeConfig normalizes legacy numeric tip variant IDs", () => {
-  const runtimeConfig = buildTipRuntimeConfig({
-    savedConfig: {
-      tip_variant_id: "44334137737309",
-    },
-    enabled: true,
-  });
-
-  assert.equal(
-    runtimeConfig.tip_variant_id,
-    "gid://shopify/ProductVariant/44334137737309",
-  );
-});
-
-test("getTipConfigSyncPayload migrates legacy stored config that is missing enabled", () => {
+test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
   const payload = getTipConfigSyncPayload({
     storedValue:
       '{"widget_title":"Legacy title","tip_percentages":"10","custom_amount_enabled":"false","tip_variant_id":"44334137737309","caption1":"a","caption2":"b","caption3":"c"}',
@@ -128,57 +124,114 @@ test("getTipConfigSyncPayload migrates legacy stored config that is missing enab
     needsSync: true,
     config: {
       enabled: true,
-      widget_title: "Legacy title",
-      tip_percentages: "10",
-      percentage_display_option: "percentage_and_amount",
       plus_only: true,
       transform_active: false,
       custom_amount_enabled: false,
+      hide_until_opt_in: false,
       tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
-      caption1: "a",
-      caption2: "b",
-      caption3: "c",
+      heading: "Legacy title",
+      support_text: "a",
+      thank_you_text: "c",
+      cta_label: DEFAULT_CTA_LABEL,
+      custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
+      custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
     },
   });
 });
 
-test("getTipConfigSyncPayload skips sync when stored config already matches runtime shape", () => {
+test("getTipConfigSyncPayload skips sync when stored config already matches the new runtime shape", () => {
+  const storedConfig = {
+    enabled: true,
+    plus_only: true,
+    transform_active: false,
+    custom_amount_enabled: true,
+    hide_until_opt_in: true,
+    tip_variant_id: "",
+    heading: "Support our team",
+    support_text: "a",
+    thank_you_text: "THANK YOU.",
+    cta_label: "Add tip now",
+    custom_text_color: "#111111",
+    custom_border_color: "#222222",
+  };
+
   const payload = getTipConfigSyncPayload({
-    storedValue:
-      '{"enabled":true,"widget_title":"Support our team","tip_percentages":"5,10","percentage_display_option":"amount_first","plus_only":true,"transform_active":false,"custom_amount_enabled":true,"tip_variant_id":"","caption1":"a","caption2":"b","caption3":"c"}',
+    storedValue: JSON.stringify(storedConfig),
     enabled: true,
   });
 
   assert.deepEqual(payload, {
     needsSync: false,
-    config: {
-      enabled: true,
-      widget_title: "Support our team",
-      tip_percentages: "5,10",
-      percentage_display_option: "amount_first",
-      plus_only: true,
-      transform_active: false,
-      custom_amount_enabled: true,
-      tip_variant_id: "",
-      caption1: "a",
-      caption2: "b",
-      caption3: "c",
-    },
+    config: storedConfig,
   });
 });
 
-test("getDefaultTipConfig uses percentage-first Plus defaults", () => {
+test("getDefaultTipConfig uses the new fixed-preset friendly defaults", () => {
+  assert.equal(FIXED_TIP_PERCENTAGES_LABEL, FIXED_TIP_PERCENTAGES.join(","));
   assert.deepEqual(getDefaultTipConfig(), {
     enabled: false,
-    widget_title: "Leave a Tip",
-    tip_percentages: "5,10,15,18,20",
-    percentage_display_option: "percentage_and_amount",
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
+    hide_until_opt_in: false,
     tip_variant_id: "",
-    caption1: "Buy our team coffee",
-    caption2: "Leave a small tip",
-    caption3: "Every bit helps!",
+    heading: DEFAULT_HEADING,
+    support_text: DEFAULT_SUPPORT_TEXT,
+    thank_you_text: DEFAULT_THANK_YOU_TEXT,
+    cta_label: DEFAULT_CTA_LABEL,
+    custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
+    custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });
+});
+
+test("ensureTipConfigRuntimeState persists a default config when the metafield is missing", async () => {
+  const calls = [];
+  const admin = {
+    graphql: async (_query, options) => {
+      calls.push({ query: _query, options });
+
+      if (calls.length === 1) {
+        return {
+          json: async () => ({
+            data: {
+              shop: {
+                id: "gid://shopify/Shop/1",
+                metafield: null,
+              },
+            },
+          }),
+        };
+      }
+
+      if (calls.length === 2) {
+        return {
+          json: async () => ({
+            data: {
+              shop: {
+                id: "gid://shopify/Shop/1",
+                metafield: null,
+              },
+            },
+          }),
+        };
+      }
+
+      return {
+        json: async () => ({
+          data: {
+            metafieldsSet: {
+              metafields: [{ id: "gid://shopify/Metafield/1" }],
+              userErrors: [],
+            },
+          },
+        }),
+      };
+    },
+  };
+
+  const result = await ensureTipConfigRuntimeState(admin, true);
+
+  assert.equal(result.synced, true);
+  assert.equal(calls.length, 3);
+  assert.match(calls[2].options.variables.input[0].value, /"enabled":true/);
 });

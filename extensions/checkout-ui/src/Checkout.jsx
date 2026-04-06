@@ -1,25 +1,28 @@
-import '@shopify/ui-extensions/preact';
-import {render} from 'preact';
-import {useEffect, useMemo, useRef, useState} from 'preact/hooks';
-import {getTipRuntimeConfigFromAppMetafields} from './runtime-config';
+import "@shopify/ui-extensions/preact";
+import { render } from "preact";
+import { useEffect, useMemo, useState } from "preact/hooks";
+import { getTipRuntimeConfigFromAppMetafields } from "./runtime-config";
 import {
+  FIXED_TIP_PERCENTAGES,
   calculateSubtotalTipAmount,
-  formatTipOptionLabel,
+  formatPercentageTipLabel,
   isValidCustomAmount,
-  parseTipPercentages,
-} from './tip-percentages';
+} from "./tip-percentages";
 
-const TIP_SOURCE_ATTRIBUTE = 'tip_source';
-const TIP_MODE_ATTRIBUTE = 'tip_mode';
-const TIP_PERCENTAGE_ATTRIBUTE = 'tip_percentage';
-const TIP_AMOUNT_ATTRIBUTE = 'tip_amount';
-const TIP_LABEL_ATTRIBUTE = 'tip_label';
-const TIP_SOURCE_VALUE = 'dynamic_subtotal';
+const TIP_SOURCE_ATTRIBUTE = "_tip_source";
+const TIP_MODE_ATTRIBUTE = "_tip_mode";
+const TIP_PERCENTAGE_ATTRIBUTE = "_tip_percentage";
+const TIP_AMOUNT_ATTRIBUTE = "_tip_amount";
+const TIP_LABEL_ATTRIBUTE = "_tip_label";
+const TIP_SOURCE_VALUE = "dynamic_subtotal";
+const DEFAULT_SELECTION = String(
+  FIXED_TIP_PERCENTAGES[1] ?? FIXED_TIP_PERCENTAGES[0] ?? "18",
+);
 
-function formatCurrency(amount, currencyCode = 'USD') {
+function formatCurrency(amount, currencyCode = "USD") {
   try {
     return new Intl.NumberFormat(undefined, {
-      style: 'currency',
+      style: "currency",
       currency: currencyCode,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -29,157 +32,67 @@ function formatCurrency(amount, currencyCode = 'USD') {
   }
 }
 
-function findTipLine(lines = [], tipVariantId = '') {
+function findTipLine(lines = [], tipVariantId = "") {
   return lines.find((line) => line?.merchandise?.id === tipVariantId) ?? null;
 }
 
-function getCheckoutSubtotal(lines = [], tipVariantId = '') {
+function getCheckoutSubtotal(lines = [], tipVariantId = "") {
   return lines.reduce((total, line) => {
     if (tipVariantId && line?.merchandise?.id === tipVariantId) {
       return total;
     }
 
-    const amount = Number.parseFloat(line?.cost?.totalAmount?.amount ?? '0');
+    const amount = Number.parseFloat(line?.cost?.totalAmount?.amount ?? "0");
     return Number.isFinite(amount) ? total + amount : total;
   }, 0);
 }
 
-function buildTipLineAttributes({mode, percentage, amount, label}) {
+function buildTipLineAttributes({ mode, percentage, amount, label }) {
   const attributes = [
-    {key: TIP_SOURCE_ATTRIBUTE, value: TIP_SOURCE_VALUE},
-    {key: TIP_MODE_ATTRIBUTE, value: mode},
-    {key: TIP_AMOUNT_ATTRIBUTE, value: String(amount)},
-    {key: TIP_LABEL_ATTRIBUTE, value: label},
+    { key: TIP_SOURCE_ATTRIBUTE, value: TIP_SOURCE_VALUE },
+    { key: TIP_MODE_ATTRIBUTE, value: mode },
+    { key: TIP_AMOUNT_ATTRIBUTE, value: String(amount) },
+    { key: TIP_LABEL_ATTRIBUTE, value: label },
   ];
 
   if (percentage) {
-    attributes.push({key: TIP_PERCENTAGE_ATTRIBUTE, value: String(percentage)});
+    attributes.push({
+      key: TIP_PERCENTAGE_ATTRIBUTE,
+      value: String(percentage),
+    });
   }
 
   return attributes;
 }
 
-function buildAddTipLineChange({merchandiseId, attributes}) {
+function buildAddTipLineChange({ merchandiseId, attributes }) {
   return {
-    type: 'addCartLine',
+    type: "addCartLine",
     merchandiseId,
     quantity: 1,
     attributes,
   };
 }
 
-function buildUpdateTipLineChange({id, attributes}) {
+function buildUpdateTipLineChange({ id, attributes }) {
   return {
-    type: 'updateCartLine',
+    type: "updateCartLine",
     id,
     quantity: 1,
     attributes,
   };
 }
 
-function buildRemoveTipLineChange({id, quantity}) {
+function buildRemoveTipLineChange({ id, quantity }) {
   return {
-    type: 'removeCartLine',
+    type: "removeCartLine",
     id,
     quantity,
   };
 }
 
 function getAttributeValue(attributes = [], key) {
-  return attributes.find((attribute) => attribute?.key === key)?.value ?? '';
-}
-
-function getInitialSelection({existingTipLine, percentages}) {
-  const savedMode = getAttributeValue(existingTipLine?.attributes, TIP_MODE_ATTRIBUTE);
-  const savedPercentage = getAttributeValue(existingTipLine?.attributes, TIP_PERCENTAGE_ATTRIBUTE);
-  const savedAmount = getAttributeValue(existingTipLine?.attributes, TIP_AMOUNT_ATTRIBUTE);
-
-  if (savedMode === 'custom' && isValidCustomAmount(savedAmount)) {
-    return {
-      selectedTip: 'custom',
-      customAmount: savedAmount,
-    };
-  }
-
-  if (
-    savedMode === 'percentage' &&
-    savedPercentage &&
-    percentages.includes(Number(savedPercentage))
-  ) {
-    return {
-      selectedTip: savedPercentage,
-      customAmount: '',
-    };
-  }
-
-  return {
-    selectedTip: percentages[0] ? String(percentages[0]) : 'none',
-    customAmount: '',
-  };
-}
-
-function getDesiredTipPayload({
-  selectedTip,
-  isCustomSelected,
-  isCustomAmountValid,
-  customAmount,
-  tipAmount,
-  selectionLabel,
-}) {
-  if (selectedTip === 'none') {
-    return null;
-  }
-
-  if (isCustomSelected && !isCustomAmountValid) {
-    return null;
-  }
-
-  if (tipAmount <= 0) {
-    return null;
-  }
-
-  return {
-    mode: isCustomSelected ? 'custom' : 'percentage',
-    percentage: isCustomSelected ? null : Number(selectedTip),
-    amount: tipAmount,
-    label: selectionLabel,
-    customAmount: isCustomSelected ? customAmount : '',
-  };
-}
-
-function getExistingTipPayload(existingTipLine) {
-  if (!existingTipLine) {
-    return null;
-  }
-
-  const mode = getAttributeValue(existingTipLine.attributes, TIP_MODE_ATTRIBUTE);
-  const percentage = getAttributeValue(existingTipLine.attributes, TIP_PERCENTAGE_ATTRIBUTE);
-  const amount = getAttributeValue(existingTipLine.attributes, TIP_AMOUNT_ATTRIBUTE);
-  const label = getAttributeValue(existingTipLine.attributes, TIP_LABEL_ATTRIBUTE);
-
-  return {
-    mode,
-    percentage,
-    amount,
-    label,
-  };
-}
-
-function tipPayloadMatches(existingPayload, nextPayload) {
-  if (!existingPayload && !nextPayload) {
-    return true;
-  }
-
-  if (!existingPayload || !nextPayload) {
-    return false;
-  }
-
-  return (
-    existingPayload.mode === nextPayload.mode &&
-    String(existingPayload.percentage ?? '') === String(nextPayload.percentage ?? '') &&
-    String(existingPayload.amount ?? '') === String(nextPayload.amount) &&
-    String(existingPayload.label ?? '') === String(nextPayload.label ?? '')
-  );
+  return attributes.find((attribute) => attribute?.key === key)?.value ?? "";
 }
 
 function canAddTipLine(instructions) {
@@ -194,30 +107,79 @@ function canRemoveTipLine(instructions) {
   return instructions?.lines?.canRemoveCartLine !== false;
 }
 
-function chunkOptions(values = [], size = 2) {
-  const chunks = [];
+function getInitialSelection({
+  existingTipLine,
+  hideUntilOptIn,
+  customAmountEnabled,
+}) {
+  const savedMode = getAttributeValue(
+    existingTipLine?.attributes,
+    TIP_MODE_ATTRIBUTE,
+  );
+  const savedPercentage = getAttributeValue(
+    existingTipLine?.attributes,
+    TIP_PERCENTAGE_ATTRIBUTE,
+  );
+  const savedAmount = getAttributeValue(
+    existingTipLine?.attributes,
+    TIP_AMOUNT_ATTRIBUTE,
+  );
 
-  for (let index = 0; index < values.length; index += size) {
-    chunks.push(values.slice(index, index + size));
+  if (
+    savedMode === "custom" &&
+    customAmountEnabled &&
+    isValidCustomAmount(savedAmount)
+  ) {
+    return {
+      selectedTip: "custom",
+      customAmount: savedAmount,
+      optionsExpanded: true,
+    };
   }
 
-  return chunks;
+  if (
+    savedMode === "percentage" &&
+    FIXED_TIP_PERCENTAGES.includes(Number(savedPercentage))
+  ) {
+    return {
+      selectedTip: savedPercentage,
+      customAmount: "",
+      optionsExpanded: true,
+    };
+  }
+
+  return {
+    selectedTip: DEFAULT_SELECTION,
+    customAmount: "",
+    optionsExpanded: !hideUntilOptIn,
+  };
 }
 
-function buildOptionRows(percentages = [], customAmountEnabled = false) {
-  const rows = chunkOptions(percentages, 2);
+function buildTipChoices({ subtotal, currencyCode, customAmountEnabled }) {
+  const fixedChoices = FIXED_TIP_PERCENTAGES.map((percentage) => ({
+    key: String(percentage),
+    primaryLabel: `${percentage}%`,
+    secondaryLabel: formatCurrency(
+      calculateSubtotalTipAmount({ subtotal, percentage }),
+      currencyCode,
+    ),
+  }));
 
   if (customAmountEnabled) {
-    if (rows.length === 0 || rows[rows.length - 1].length === 2) {
-      rows.push([{value: 'custom', label: 'Custom amount'}]);
-    } else {
-      rows[rows.length - 1].push({value: 'custom', label: 'Custom amount'});
-    }
+    fixedChoices.push({
+      key: "custom",
+      primaryLabel: "Custom",
+      secondaryLabel: "Choose amount",
+    });
   }
 
-  rows.push([{value: 'none', label: 'No thanks'}]);
+  fixedChoices.push({
+    key: "none",
+    primaryLabel: "None",
+    secondaryLabel: formatCurrency(0, currencyCode),
+  });
 
-  return rows;
+  return fixedChoices;
 }
 
 export default async () => {
@@ -225,7 +187,9 @@ export default async () => {
 };
 
 function TipBlockExtension() {
-  const settings = getTipRuntimeConfigFromAppMetafields(shopify.appMetafields.value);
+  const settings = getTipRuntimeConfigFromAppMetafields(
+    shopify.appMetafields.value,
+  );
 
   if (!settings?.enabled) {
     return null;
@@ -235,24 +199,59 @@ function TipBlockExtension() {
   const lines = shopify.lines?.value ?? [];
   const instructions = shopify.instructions?.value;
   const applyCartLinesChange = shopify.applyCartLinesChange;
-  const currencyCode = lines?.[0]?.cost?.totalAmount?.currencyCode ?? 'USD';
-  const percentages = parseTipPercentages(settings.tip_percentages);
-  const optionRows = buildOptionRows(percentages, settings.custom_amount_enabled);
+  const currencyCode = lines?.[0]?.cost?.totalAmount?.currencyCode ?? "USD";
   const existingTipLine = findTipLine(lines, tipVariantId);
   const subtotal = getCheckoutSubtotal(lines, tipVariantId);
-  const initialSelection = getInitialSelection({existingTipLine, percentages});
-
+  const initialSelection = getInitialSelection({
+    existingTipLine,
+    hideUntilOptIn: settings.hide_until_opt_in,
+    customAmountEnabled: settings.custom_amount_enabled,
+  });
   const [selectedTip, setSelectedTip] = useState(initialSelection.selectedTip);
-  const [customAmount, setCustomAmount] = useState(initialSelection.customAmount);
+  const [customAmount, setCustomAmount] = useState(
+    initialSelection.customAmount,
+  );
+  const [optionsExpanded, setOptionsExpanded] = useState(
+    initialSelection.optionsExpanded,
+  );
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const hasUserInteractedRef = useRef(false);
+  const choices = useMemo(
+    () =>
+      buildTipChoices({
+        subtotal,
+        currencyCode,
+        customAmountEnabled: settings.custom_amount_enabled,
+      }),
+    [currencyCode, settings.custom_amount_enabled, subtotal],
+  );
 
-  const isCustomSelected = selectedTip === 'custom';
-  const isCustomAmountValid = !isCustomSelected || isValidCustomAmount(customAmount);
+  useEffect(() => {
+    const nextSelection = getInitialSelection({
+      existingTipLine,
+      hideUntilOptIn: settings.hide_until_opt_in,
+      customAmountEnabled: settings.custom_amount_enabled,
+    });
+
+    setSelectedTip(nextSelection.selectedTip);
+    setCustomAmount(nextSelection.customAmount);
+    setOptionsExpanded(nextSelection.optionsExpanded);
+  }, [
+    existingTipLine?.id,
+    getAttributeValue(existingTipLine?.attributes, TIP_MODE_ATTRIBUTE),
+    getAttributeValue(existingTipLine?.attributes, TIP_PERCENTAGE_ATTRIBUTE),
+    getAttributeValue(existingTipLine?.attributes, TIP_AMOUNT_ATTRIBUTE),
+    settings.hide_until_opt_in,
+    settings.custom_amount_enabled,
+  ]);
+
+  const isCustomSelected = selectedTip === "custom";
+  const isNoneSelected = selectedTip === "none";
+  const isCustomAmountValid =
+    !isCustomSelected || isValidCustomAmount(customAmount);
   const tipAmount = useMemo(() => {
-    if (selectedTip === 'none') {
+    if (isNoneSelected) {
       return 0;
     }
 
@@ -264,58 +263,77 @@ function TipBlockExtension() {
       subtotal,
       percentage: Number(selectedTip),
     });
-  }, [customAmount, isCustomAmountValid, isCustomSelected, selectedTip, subtotal]);
+  }, [
+    customAmount,
+    isCustomAmountValid,
+    isCustomSelected,
+    isNoneSelected,
+    selectedTip,
+    subtotal,
+  ]);
 
   const selectionLabel = isCustomSelected
     ? `Custom tip (${formatCurrency(tipAmount, currencyCode)})`
-    : formatTipOptionLabel({
-        percentage: Number(selectedTip),
-        amount: tipAmount,
-        currencyCode,
-        displayOption: settings.percentage_display_option,
-      });
+    : isNoneSelected
+      ? "No tip"
+      : formatPercentageTipLabel({
+          percentage: Number(selectedTip),
+          amount: tipAmount,
+          currencyCode,
+        });
 
-  const desiredTipPayload = getDesiredTipPayload({
-    selectedTip,
-    isCustomSelected,
-    isCustomAmountValid,
-    customAmount,
-    tipAmount,
-    selectionLabel,
-  });
-  const existingTipPayload = getExistingTipPayload(existingTipLine);
+  const primaryActionLabel =
+    isNoneSelected && existingTipLine ? "Remove tip" : settings.cta_label;
+  const disablePrimaryAction =
+    isLoading || (isCustomSelected && !isCustomAmountValid);
 
   const handleApplyTip = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
     if (!settings.transform_active) {
-      setErrorMessage('Dynamic pricing is not ready for this store yet. Open the app settings page once to let Shopify enable the Cart Transform, then refresh checkout.');
+      setErrorMessage(
+        "Dynamic pricing is not ready for this store yet. Open the app settings page once to let Shopify enable the Cart Transform, then refresh checkout.",
+      );
       return;
     }
 
     if (!tipVariantId) {
-      setErrorMessage('Tip product variant is not configured yet.');
+      setErrorMessage("Tip product variant is not configured yet.");
       return;
     }
 
     if (subtotal <= 0 && !isCustomSelected) {
-      setErrorMessage('Tip percentages need a positive subtotal before they can be applied.');
+      setErrorMessage(
+        "Tip percentages need a positive subtotal before they can be applied.",
+      );
       return;
     }
 
     if (isCustomSelected && !isCustomAmountValid) {
-      setErrorMessage('Custom amount must be greater than 0.');
+      setErrorMessage("Custom amount must be greater than 0.");
       return;
     }
 
-    if (typeof applyCartLinesChange !== 'function') {
-      setErrorMessage('Checkout cannot update tip lines in this payment flow.');
+    if (typeof applyCartLinesChange !== "function") {
+      setErrorMessage("Checkout cannot update tip lines in this payment flow.");
+      return;
+    }
+
+    if (existingTipLine && !canUpdateTipLine(instructions)) {
+      setErrorMessage(
+        "Checkout cannot update the tip line in this payment flow.",
+      );
+      return;
+    }
+
+    if (!existingTipLine && !canAddTipLine(instructions)) {
+      setErrorMessage("Checkout cannot add a tip line in this payment flow.");
       return;
     }
 
     const attributes = buildTipLineAttributes({
-      mode: isCustomSelected ? 'custom' : 'percentage',
+      mode: isCustomSelected ? "custom" : "percentage",
       percentage: isCustomSelected ? null : Number(selectedTip),
       amount: tipAmount,
       label: selectionLabel,
@@ -324,17 +342,22 @@ function TipBlockExtension() {
     setIsLoading(true);
     try {
       const change = existingTipLine
-        ? buildUpdateTipLineChange({id: existingTipLine.id, attributes})
-        : buildAddTipLineChange({merchandiseId: tipVariantId, attributes});
+        ? buildUpdateTipLineChange({ id: existingTipLine.id, attributes })
+        : buildAddTipLineChange({ merchandiseId: tipVariantId, attributes });
       const result = await applyCartLinesChange(change);
 
-      if (result?.type === 'error') {
-        throw new Error(result.message ?? 'Unknown error');
+      if (result?.type === "error") {
+        throw new Error(result.message ?? "Unknown error");
       }
 
-      setSuccessMessage('Tip line saved. Shopify Plus pricing should update the order summary automatically.');
+      setSuccessMessage(
+        "Tip line saved. Shopify Plus pricing should update automatically.",
+      );
+      setOptionsExpanded(true);
     } catch (error) {
-      setErrorMessage(`Unable to apply tip: ${error?.message ?? 'Unknown error'}`);
+      setErrorMessage(
+        `Unable to apply tip: ${error?.message ?? "Unknown error"}`,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -345,75 +368,87 @@ function TipBlockExtension() {
     setSuccessMessage(null);
 
     if (!existingTipLine) {
-      setSuccessMessage('No saved tip line to remove.');
+      if (settings.hide_until_opt_in) {
+        setOptionsExpanded(false);
+      }
+      setSuccessMessage("Tip removed from the checkout.");
       return;
     }
 
-    if (!canRemoveTipLine(instructions) || typeof applyCartLinesChange !== 'function') {
-      setErrorMessage('Checkout cannot remove tip lines in this payment flow.');
+    if (
+      !canRemoveTipLine(instructions) ||
+      typeof applyCartLinesChange !== "function"
+    ) {
+      setErrorMessage("Checkout cannot remove tip lines in this payment flow.");
       return;
     }
 
     setIsLoading(true);
     try {
       const result = await applyCartLinesChange(
-        buildRemoveTipLineChange({id: existingTipLine.id, quantity: existingTipLine.quantity}),
+        buildRemoveTipLineChange({
+          id: existingTipLine.id,
+          quantity: existingTipLine.quantity,
+        }),
       );
 
-      if (result?.type === 'error') {
-        throw new Error(result.message ?? 'Unknown error');
+      if (result?.type === "error") {
+        throw new Error(result.message ?? "Unknown error");
       }
 
-      setSuccessMessage('Tip removed from the checkout.');
+      setSelectedTip(DEFAULT_SELECTION);
+      setCustomAmount("");
+      setOptionsExpanded(!settings.hide_until_opt_in);
+      setSuccessMessage("Tip removed from the checkout.");
     } catch (error) {
-      setErrorMessage(`Unable to remove tip: ${error?.message ?? 'Unknown error'}`);
+      setErrorMessage(
+        `Unable to remove tip: ${error?.message ?? "Unknown error"}`,
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (!hasUserInteractedRef.current || isLoading) {
+  const handlePrimaryAction = async () => {
+    if (isNoneSelected) {
+      await handleRemoveTip();
       return;
     }
 
-    if (!settings.transform_active) {
-      return;
-    }
+    await handleApplyTip();
+  };
 
-    if (selectedTip === 'none') {
-      if (existingTipLine) {
-        handleRemoveTip();
-      }
-      return;
-    }
-
-    if (!desiredTipPayload || tipPayloadMatches(existingTipPayload, desiredTipPayload)) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      handleApplyTip();
-    }, isCustomSelected ? 350 : 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [
-    selectedTip,
-    customAmount,
-    tipAmount,
-    settings.transform_active,
-    existingTipLine?.id,
-    existingTipPayload?.amount,
-    existingTipPayload?.label,
-    existingTipPayload?.mode,
-    existingTipPayload?.percentage,
-    desiredTipPayload?.amount,
-    desiredTipPayload?.label,
-    desiredTipPayload?.mode,
-    desiredTipPayload?.percentage,
-    isCustomSelected,
-    isLoading,
-  ]);
+  if (!optionsExpanded) {
+    return (
+      <s-grid
+        background="subdued"
+        border="base"
+        borderRadius="large-100"
+        padding="base"
+        gap="base"
+      >
+        <s-stack gap="small" inline-size="100%">
+          <s-text type="strong">{settings.heading}</s-text>
+          <s-text type="small" tone="subdued">
+            {settings.support_text}
+          </s-text>
+        </s-stack>
+        <s-button
+          variant="primary"
+          inlineSize="fill"
+          onClick={() => {
+            setOptionsExpanded(true);
+            setErrorMessage(null);
+            setSuccessMessage(null);
+          }}
+        >
+          {settings.cta_label}
+        </s-button>
+        {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
+        {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
+      </s-grid>
+    );
+  }
 
   return (
     <s-grid
@@ -424,84 +459,106 @@ function TipBlockExtension() {
       gap="base"
     >
       <s-stack gap="small" inline-size="100%">
-        <s-stack direction="inline" gap="small" align-items="center">
-          <s-text type="strong">Tip</s-text>
-        </s-stack>
-        <s-text type="small" tone="neutral">{settings.widget_title}</s-text>
-        <s-text type="small" tone="subdued">{settings.caption1}</s-text>
+        <s-text type="strong">{settings.heading}</s-text>
+        <s-text type="small" tone="subdued">
+          {settings.support_text}
+        </s-text>
       </s-stack>
 
-      <s-stack gap="small" inline-size="100%">
-        {optionRows.map((row, rowIndex) => (
-          <s-grid key={`row-${rowIndex}`} gridTemplateColumns="1fr 1fr" gap="small">
-            {row.map((option) => {
-              const optionValue =
-                typeof option === 'number' ? String(option) : option.value;
-              const optionLabel =
-                typeof option === 'number' ? `${option}%` : option.label;
-              const isSelected = selectedTip === optionValue;
+      <s-grid gridTemplateColumns="1fr 1fr" gap="small">
+        {choices.map((choice) => {
+          const isSelected = selectedTip === choice.key;
 
-              return (
-                <s-button
-                  key={optionValue}
-                  inlineSize="fill"
-                  variant={isSelected ? 'primary' : 'secondary'}
-                  tone={isSelected ? 'accent' : undefined}
-                  onClick={() => {
-                    hasUserInteractedRef.current = true;
-                    setSelectedTip(optionValue);
-                    setErrorMessage(null);
-                    setSuccessMessage(null);
-                  }}
-                >
-                  {optionLabel}
-                </s-button>
-              );
-            })}
-            {row.length === 1 && <s-box inlineSize="fill" />}
-          </s-grid>
-        ))}
-      </s-stack>
+          return (
+            <s-press-button
+              key={choice.key}
+              inlineSize="fill"
+              pressed={isSelected}
+              onClick={() => {
+                setSelectedTip(choice.key);
+                setErrorMessage(null);
+                setSuccessMessage(null);
 
-      {selectedTip === 'custom' && settings.custom_amount_enabled && (
-        <s-text-field
-          name="custom-amount"
-          value={customAmount}
-          onChange={(e) => {
-            hasUserInteractedRef.current = true;
-            setCustomAmount(e.currentTarget.value);
-            setErrorMessage(null);
-            setSuccessMessage(null);
-          }}
-          label="Custom amount"
-        />
+                if (choice.key !== "custom") {
+                  setCustomAmount("");
+                }
+              }}
+            >
+              <s-stack gap="extra-tight" inline-size="100%">
+                <s-text type="strong">{choice.primaryLabel}</s-text>
+                <s-text type="small" tone="subdued">
+                  {choice.secondaryLabel}
+                </s-text>
+              </s-stack>
+            </s-press-button>
+          );
+        })}
+      </s-grid>
+
+      {isCustomSelected && settings.custom_amount_enabled && (
+        <s-grid
+          gridTemplateColumns="auto 1fr auto"
+          gap="small"
+          alignItems="center"
+        >
+          <s-box padding="small" border="base" borderRadius="base">
+            <s-text type="strong">-</s-text>
+          </s-box>
+          <s-text-field
+            name="custom-amount"
+            value={customAmount}
+            onChange={(event) => {
+              setCustomAmount(event.currentTarget.value);
+              setErrorMessage(null);
+              setSuccessMessage(null);
+            }}
+            label="Custom amount"
+          />
+          <s-box padding="small" border="base" borderRadius="base">
+            <s-text type="strong">+</s-text>
+          </s-box>
+        </s-grid>
       )}
 
-      {selectedTip !== 'none' && tipAmount > 0 && (
+      {/*
+        Temporary hide for the tip/subtotal summary block.
+        Keep this block in place so it can be restored without rebuilding the logic.
+      {!isNoneSelected && tipAmount > 0 && (
         <s-stack gap="small" inline-size="100%">
+          <s-text type="small" tone="subdued">
+            Estimated tip: {formatCurrency(tipAmount, currencyCode)}
+          </s-text>
           <s-text type="small" tone="subdued">
             Subtotal: {formatCurrency(subtotal, currencyCode)}
           </s-text>
-          <s-stack direction="inline" gap="small" align-items="center">
-            <s-text type="small" tone="subdued">Tip total</s-text>
-            <s-text type="strong">{formatCurrency(tipAmount, currencyCode)}</s-text>
-          </s-stack>
         </s-stack>
       )}
+      */}
+
+      <s-button
+        variant="primary"
+        inlineSize="fill"
+        loading={isLoading}
+        disabled={disablePrimaryAction}
+        onClick={handlePrimaryAction}
+      >
+        {primaryActionLabel}
+      </s-button>
+
+      <s-text type="small" tone="subdued">
+        {settings.thank_you_text}
+      </s-text>
 
       {!settings.transform_active && (
         <s-banner tone="warning">
-          Dynamic pricing is not ready for this store yet. Open the app settings page once to let Shopify enable the Cart Transform, then refresh checkout.
+          Dynamic pricing is not ready for this store yet. Open the app settings
+          page once to let Shopify enable the Cart Transform, then refresh
+          checkout.
         </s-banner>
       )}
 
       {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
-
-      {isLoading && (
-        <s-text type="small" tone="subdued">
-          Updating your order summary...
-        </s-text>
-      )}
+      {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
     </s-grid>
   );
 }

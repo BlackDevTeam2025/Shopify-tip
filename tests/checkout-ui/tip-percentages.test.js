@@ -2,14 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  FIXED_TIP_PERCENTAGES,
   calculateSubtotalTipAmount,
   isValidCustomAmount,
-  parseTipPercentages,
   roundCurrencyAmount,
 } from "../../extensions/checkout-ui/src/tip-percentages.js";
 
-test("parseTipPercentages returns sanitized percentages from csv", () => {
-  assert.deepEqual(parseTipPercentages("5, 10, nope, 20, 0, -4, 10000"), [5, 10, 20]);
+test("fixed tip percentages stay locked to the new preset set", () => {
+  assert.deepEqual(FIXED_TIP_PERCENTAGES, [15, 18, 25]);
 });
 
 test("roundCurrencyAmount rounds to the shop currency minor unit", () => {
@@ -19,10 +19,10 @@ test("roundCurrencyAmount rounds to the shop currency minor unit", () => {
 test("calculateSubtotalTipAmount derives tip amount from subtotal percentage", () => {
   assert.equal(
     calculateSubtotalTipAmount({
-      subtotal: 88.6,
-      percentage: 10,
+      subtotal: 330,
+      percentage: 15,
     }),
-    8.86,
+    49.5,
   );
 });
 
