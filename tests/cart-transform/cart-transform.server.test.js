@@ -88,6 +88,42 @@ test("ensureTipCartTransform returns a clear error when the session is missing c
   assert.match(result.errors[0].message, /missing write_cart_transforms/i);
 });
 
+test("ensureTipCartTransform attempts activation when no scope string is available", async () => {
+  const result = await ensureTipCartTransform(
+    createAdminWithJsonResponse({
+      data: {
+        cartTransformCreate: {
+          cartTransform: { id: "gid://shopify/CartTransform/2" },
+          userErrors: [],
+        },
+      },
+    }),
+  );
+
+  assert.deepEqual(result, {
+    active: true,
+    cartTransformId: "gid://shopify/CartTransform/2",
+    errors: [],
+  });
+});
+
+test("ensureTipCartTransform surfaces Shopify userErrors when scope is omitted", async () => {
+  const result = await ensureTipCartTransform(
+    createAdminWithJsonResponse({
+      data: {
+        cartTransformCreate: {
+          cartTransform: null,
+          userErrors: [{ field: ["functionHandle"], message: "Shop is not eligible for cart transforms" }],
+        },
+      },
+    }),
+  );
+
+  assert.equal(result.active, false);
+  assert.equal(result.cartTransformId, null);
+  assert.match(result.errors[0].message, /not eligible for cart transforms/i);
+});
+
 test("hasCartTransformScope detects whether the scope is present", () => {
   assert.equal(hasCartTransformScope("write_products,write_metaobjects"), false);
   assert.equal(

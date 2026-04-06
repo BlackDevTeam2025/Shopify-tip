@@ -4,6 +4,8 @@ import { authenticate } from "../shopify.server";
 import { createBypassLicenseState, isLicenseActive, syncShopLicenseFromBilling } from "./license.server";
 import { shouldBypassBilling } from "./env.server";
 import { ensureTipConfigRuntimeState } from "../tip-config.server.js";
+import { getBillingRouteAccessDecision, getTipRuntimeEnabled } from "./access-policy.server.js";
+import { loadShopEligibility } from "./shop-eligibility.server.js";
 
 export function isLicensePath(pathname) {
   return pathname === "/app/license" || pathname.startsWith("/app/license/");
@@ -15,17 +17,35 @@ export async function authenticateBillingRoute(
 ) {
   const adminContext = await authenticate.admin(request);
   const pathname = new URL(request.url).pathname;
+  const isLicenseRoute = isLicensePath(pathname);
   const canAccessWithoutLicense =
-    allowUnlicensed ?? isLicensePath(pathname);
+    allowUnlicensed ?? isLicenseRoute;
+  const shopEligibility = await loadShopEligibility(adminContext.admin);
 
   if (shouldBypassBilling()) {
     const licenseState = createBypassLicenseState(adminContext.session.shop);
-    await ensureTipConfigRuntimeState(adminContext.admin, isLicenseActive(licenseState));
+    const licenseActive = isLicenseActive(licenseState);
+    const accessDecision = getBillingRouteAccessDecision({
+      isLicenseRoute,
+      canAccessWithoutLicense,
+      shopEligibility,
+      licenseActive,
+    });
+
+    if (accessDecision.redirectTo) {
+      throw redirect(accessDecision.redirectTo);
+    }
+
+    await ensureTipConfigRuntimeState(
+      adminContext.admin,
+      getTipRuntimeEnabled({ shopEligibility, licenseActive }),
+    );
 
     return {
       ...adminContext,
-      isLicenseRoute: isLicensePath(pathname),
+      isLicenseRoute,
       licenseState,
+      shopEligibility,
     };
   }
 
@@ -33,16 +53,27 @@ export async function authenticateBillingRoute(
     shop: adminContext.session.shop,
     billing: adminContext.billing,
   });
+  const licenseActive = isLicenseActive(licenseState);
+  const accessDecision = getBillingRouteAccessDecision({
+    isLicenseRoute,
+    canAccessWithoutLicense,
+    shopEligibility,
+    licenseActive,
+  });
 
-  if (!canAccessWithoutLicense && !isLicenseActive(licenseState)) {
-    throw redirect("/app/license");
+  if (accessDecision.redirectTo) {
+    throw redirect(accessDecision.redirectTo);
   }
 
-  await ensureTipConfigRuntimeState(adminContext.admin, isLicenseActive(licenseState));
+  await ensureTipConfigRuntimeState(
+    adminContext.admin,
+    getTipRuntimeEnabled({ shopEligibility, licenseActive }),
+  );
 
   return {
     ...adminContext,
-    isLicenseRoute: isLicensePath(pathname),
+    isLicenseRoute,
     licenseState,
+    shopEligibility,
   };
 }

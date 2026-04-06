@@ -7,7 +7,11 @@ import { syncTipConfigEnabled } from "../tip-config.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
 
 export const loader = async ({ request }) => {
-  const { admin, licenseState, session } = await authenticateBillingRoute(request);
+  const { admin, licenseState, session, shopEligibility } = await authenticateBillingRoute(request);
+
+  if (!shopEligibility.eligible) {
+    throw redirect("/app/license");
+  }
 
   if (isLicenseActive(licenseState)) {
     const transformStatus = await ensureTipCartTransform(admin, session?.scope);

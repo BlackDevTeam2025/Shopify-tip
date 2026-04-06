@@ -13,7 +13,9 @@ export function hasCartTransformScope(scope = "") {
 }
 
 export async function ensureTipCartTransform(admin, scope = "") {
-  if (!hasCartTransformScope(scope)) {
+  const hasExplicitScope = typeof scope === "string" && scope.trim().length > 0;
+
+  if (hasExplicitScope && !hasCartTransformScope(scope)) {
     return {
       active: false,
       cartTransformId: null,
