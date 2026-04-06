@@ -4,8 +4,14 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { getLifetimePlanDetails } from "../billing/config.server";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { buildLicensePageState } from "../billing/license-page.server";
-import { isLicenseActive, syncShopLicenseFromBilling } from "../billing/license.server";
-import { shouldBypassBilling, shouldUseTestCharge } from "../billing/env.server";
+import {
+  isLicenseActive,
+  syncShopLicenseFromBilling,
+} from "../billing/license.server";
+import {
+  shouldBypassBilling,
+  shouldUseTestCharge,
+} from "../billing/env.server";
 
 function formatMoney(amount, currencyCode) {
   return new Intl.NumberFormat("en-US", {
@@ -14,11 +20,21 @@ function formatMoney(amount, currencyCode) {
   }).format(amount);
 }
 
+function throwEmbeddedRedirect(adminContext, url) {
+  if (typeof adminContext?.redirect === "function") {
+    const response = adminContext.redirect(url);
+    throw response;
+  }
+
+  throw redirect(url);
+}
+
 export const loader = async ({ request }) => {
-  const { licenseState, shopEligibility } = await authenticateBillingRoute(request);
+  const adminContext = await authenticateBillingRoute(request);
+  const { licenseState, shopEligibility } = adminContext;
 
   if (shopEligibility.eligible && isLicenseActive(licenseState)) {
-    throw redirect("/app");
+    throwEmbeddedRedirect(adminContext, "/app");
   }
 
   return {
@@ -30,14 +46,18 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   if (shouldBypassBilling()) {
-    const { shopEligibility } = await authenticateBillingRoute(request);
-    throw redirect(shopEligibility.eligible ? "/app" : "/app/license");
+    const adminContext = await authenticateBillingRoute(request);
+    throwEmbeddedRedirect(
+      adminContext,
+      adminContext.shopEligibility.eligible ? "/app" : "/app/license",
+    );
   }
 
-  const { billing, session, shopEligibility } = await authenticateBillingRoute(request);
+  const adminContext = await authenticateBillingRoute(request);
+  const { billing, session, shopEligibility } = adminContext;
 
   if (!shopEligibility.eligible) {
-    throw redirect("/app/license");
+    throwEmbeddedRedirect(adminContext, "/app/license");
   }
 
   const currentLicense = await syncShopLicenseFromBilling({
@@ -46,7 +66,7 @@ export const action = async ({ request }) => {
   });
 
   if (isLicenseActive(currentLicense)) {
-    throw redirect("/app");
+    throwEmbeddedRedirect(adminContext, "/app");
   }
 
   await billing.request({
@@ -74,7 +94,13 @@ export default function LicensePage() {
   return (
     <s-page heading={isIneligible ? "Shopify Plus Required" : "Unlock Tip App"}>
       <s-grid columns="2fr 1fr" gap="base">
-        <s-section heading={isIneligible ? "This store isn't eligible yet." : "One purchase. Ongoing access."}>
+        <s-section
+          heading={
+            isIneligible
+              ? "This store isn't eligible yet."
+              : "One purchase. Ongoing access."
+          }
+        >
           <s-stack direction="block" gap="base">
             <s-box
               padding="base"
@@ -105,7 +131,9 @@ export default function LicensePage() {
                         {isIneligible ? planDisplayName : formattedPrice}
                       </s-text>
                       <s-text tone="subdued">
-                        {isIneligible ? "Detected current plan" : "One-time lifetime license"}
+                        {isIneligible
+                          ? "Detected current plan"
+                          : "One-time lifetime license"}
                       </s-text>
                     </s-stack>
                   </s-box>
@@ -117,7 +145,9 @@ export default function LicensePage() {
                   >
                     <s-stack direction="block" gap="small">
                       <s-text type="strong">
-                        {isIneligible ? "Eligibility requirement" : "What unlocks"}
+                        {isIneligible
+                          ? "Eligibility requirement"
+                          : "What unlocks"}
                       </s-text>
                       <s-text tone="subdued">
                         {isIneligible
@@ -130,10 +160,17 @@ export default function LicensePage() {
               </s-stack>
             </s-box>
 
-            <s-box padding="base" borderWidth="base" borderRadius="base" background="base">
+            <s-box
+              padding="base"
+              borderWidth="base"
+              borderRadius="base"
+              background="base"
+            >
               <s-stack direction="block" gap="small">
                 <s-text type="strong">
-                  {isIneligible ? "Before you can buy" : "Included with your license"}
+                  {isIneligible
+                    ? "Before you can buy"
+                    : "Included with your license"}
                 </s-text>
                 <s-unordered-list>
                   <s-list-item>
@@ -166,7 +203,9 @@ export default function LicensePage() {
           >
             <s-stack direction="block" gap="base">
               <s-text type="strong">
-                {isIneligible ? "Shopify Plus is required" : "Ready to unlock this store?"}
+                {isIneligible
+                  ? "Shopify Plus is required"
+                  : "Ready to unlock this store?"}
               </s-text>
               <s-text tone="subdued">
                 {isIneligible
@@ -180,19 +219,28 @@ export default function LicensePage() {
                 background="subdued"
               >
                 <s-stack direction="block" gap="small">
-                  <s-text type="strong">{isIneligible ? "Shopify Plus" : formattedPrice}</s-text>
+                  <s-text type="strong">
+                    {isIneligible ? "Shopify Plus" : formattedPrice}
+                  </s-text>
                   <s-text tone="subdued">
-                    {isIneligible ? "Required before purchase is available" : "Billed once through Shopify"}
+                    {isIneligible
+                      ? "Required before purchase is available"
+                      : "Billed once through Shopify"}
                   </s-text>
                 </s-stack>
               </s-box>
               {isIneligible ? (
                 <s-banner tone="warning">
-                  Upgrade this store to Shopify Plus, then come back to purchase the app.
+                  Upgrade this store to Shopify Plus, then come back to purchase
+                  the app.
                 </s-banner>
               ) : (
                 <Form method="post">
-                  <s-button type="submit" variant="primary" loading={isSubmitting}>
+                  <s-button
+                    type="submit"
+                    variant="primary"
+                    loading={isSubmitting}
+                  >
                     {isSubmitting ? "Redirecting..." : "Unlock app forever"}
                   </s-button>
                 </Form>

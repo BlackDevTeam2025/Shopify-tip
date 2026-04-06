@@ -1,7 +1,13 @@
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import {
+  Outlet,
+  useLoaderData,
+  useLocation,
+  useRouteError,
+} from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticateBillingRoute } from "../billing/gate.server";
+import { appendEmbeddedSearch } from "../embedded-app-url.js";
 
 export const loader = async ({ request }) => {
   const { isLicenseRoute } = await authenticateBillingRoute(request);
@@ -15,13 +21,19 @@ export const loader = async ({ request }) => {
 
 export default function App() {
   const { apiKey, showNav } = useLoaderData();
+  const location = useLocation();
+  const homeHref = appendEmbeddedSearch("/app", location.search);
+  const settingsHref = appendEmbeddedSearch(
+    "/app/settings/tip-block",
+    location.search,
+  );
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       {showNav ? (
         <s-app-nav>
-          <s-link href="/app">Home</s-link>
-          <s-link href="/app/settings/tip-block">Tip Settings</s-link>
+          <s-link href={homeHref}>Home</s-link>
+          <s-link href={settingsHref}>Tip Settings</s-link>
         </s-app-nav>
       ) : null}
       <Outlet />

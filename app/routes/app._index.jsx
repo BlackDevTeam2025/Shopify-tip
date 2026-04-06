@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useLocation } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticateBillingRoute } from "../billing/gate.server";
+import { appendEmbeddedSearch } from "../embedded-app-url.js";
 
 export const loader = async ({ request }) => {
   await authenticateBillingRoute(request);
@@ -128,10 +129,15 @@ export const action = async ({ request }) => {
 
 export default function Index() {
   const fetcher = useFetcher();
+  const location = useLocation();
   const shopify = useAppBridge();
   const isLoading =
     ["loading", "submitting"].includes(fetcher.state) &&
     fetcher.formMethod === "POST";
+  const additionalPageHref = appendEmbeddedSearch(
+    "/app/additional",
+    location.search,
+  );
 
   useEffect(() => {
     if (fetcher.data?.product?.id) {
@@ -156,7 +162,9 @@ export default function Index() {
             App Bridge
           </s-link>{" "}
           interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
+          <s-link href={additionalPageHref}>
+            additional page in the app nav
+          </s-link>
           , as well as an{" "}
           <s-link
             href="https://shopify.dev/docs/api/admin-graphql"

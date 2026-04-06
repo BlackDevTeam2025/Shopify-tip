@@ -1,14 +1,30 @@
 import { redirect } from "react-router";
 
 import { authenticate } from "../shopify.server";
-import { createBypassLicenseState, isLicenseActive, syncShopLicenseFromBilling } from "./license.server";
+import {
+  createBypassLicenseState,
+  isLicenseActive,
+  syncShopLicenseFromBilling,
+} from "./license.server";
 import { shouldBypassBilling } from "./env.server";
 import { ensureTipConfigRuntimeState } from "../tip-config.server.js";
-import { getBillingRouteAccessDecision, getTipRuntimeEnabled } from "./access-policy.server.js";
+import {
+  getBillingRouteAccessDecision,
+  getTipRuntimeEnabled,
+} from "./access-policy.server.js";
 import { loadShopEligibility } from "./shop-eligibility.server.js";
 
 export function isLicensePath(pathname) {
   return pathname === "/app/license" || pathname.startsWith("/app/license/");
+}
+
+function throwEmbeddedRedirect(adminContext, url) {
+  if (typeof adminContext?.redirect === "function") {
+    const response = adminContext.redirect(url);
+    throw response;
+  }
+
+  throw redirect(url);
 }
 
 export async function authenticateBillingRoute(
@@ -18,8 +34,7 @@ export async function authenticateBillingRoute(
   const adminContext = await authenticate.admin(request);
   const pathname = new URL(request.url).pathname;
   const isLicenseRoute = isLicensePath(pathname);
-  const canAccessWithoutLicense =
-    allowUnlicensed ?? isLicenseRoute;
+  const canAccessWithoutLicense = allowUnlicensed ?? isLicenseRoute;
   const shopEligibility = await loadShopEligibility(adminContext.admin);
 
   if (shouldBypassBilling()) {
@@ -33,7 +48,7 @@ export async function authenticateBillingRoute(
     });
 
     if (accessDecision.redirectTo) {
-      throw redirect(accessDecision.redirectTo);
+      throwEmbeddedRedirect(adminContext, accessDecision.redirectTo);
     }
 
     await ensureTipConfigRuntimeState(
@@ -62,7 +77,7 @@ export async function authenticateBillingRoute(
   });
 
   if (accessDecision.redirectTo) {
-    throw redirect(accessDecision.redirectTo);
+    throwEmbeddedRedirect(adminContext, accessDecision.redirectTo);
   }
 
   await ensureTipConfigRuntimeState(

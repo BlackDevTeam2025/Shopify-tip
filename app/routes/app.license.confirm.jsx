@@ -6,20 +6,30 @@ import { isLicenseActive } from "../billing/license.server";
 import { syncTipConfigEnabled } from "../tip-config.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
 
+function throwEmbeddedRedirect(adminContext, url) {
+  if (typeof adminContext?.redirect === "function") {
+    const response = adminContext.redirect(url);
+    throw response;
+  }
+
+  throw redirect(url);
+}
+
 export const loader = async ({ request }) => {
-  const { admin, licenseState, session, shopEligibility } = await authenticateBillingRoute(request);
+  const adminContext = await authenticateBillingRoute(request);
+  const { admin, licenseState, session, shopEligibility } = adminContext;
 
   if (!shopEligibility.eligible) {
-    throw redirect("/app/license");
+    throwEmbeddedRedirect(adminContext, "/app/license");
   }
 
   if (isLicenseActive(licenseState)) {
     const transformStatus = await ensureTipCartTransform(admin, session?.scope);
     await syncTipConfigEnabled(admin, true, transformStatus.active);
-    throw redirect("/app");
+    throwEmbeddedRedirect(adminContext, "/app");
   }
 
-  throw redirect("/app/license");
+  throwEmbeddedRedirect(adminContext, "/app/license");
 };
 
 export const headers = (args) => boundary.headers(args);
