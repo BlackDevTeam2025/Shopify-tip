@@ -1,339 +1,413 @@
-import { useEffect } from "react";
-import { useFetcher, useLocation } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import { useLoaderData, useLocation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { appendEmbeddedSearch } from "../embedded-app-url.js";
 
-export const loader = async ({ request }) => {
-  await authenticateBillingRoute(request);
-
-  return null;
+const styles = {
+  page: {
+    minHeight: "100%",
+    background: "#f5f7fa",
+    padding: "32px 24px 40px",
+  },
+  container: {
+    maxWidth: "1120px",
+    margin: "0 auto",
+    display: "grid",
+    gap: "24px",
+  },
+  header: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
+  headerMeta: {
+    display: "grid",
+    gap: "10px",
+  },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+  },
+  pageTitle: {
+    margin: 0,
+    fontSize: "34px",
+    lineHeight: 1.05,
+    fontWeight: 800,
+    letterSpacing: "-0.04em",
+    color: "#111827",
+  },
+  pageIntro: {
+    margin: 0,
+    maxWidth: "760px",
+    fontSize: "15px",
+    lineHeight: 1.65,
+    color: "#4b5563",
+  },
+  action: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "44px",
+    padding: "0 16px",
+    borderRadius: "12px",
+    background: "#111827",
+    color: "#ffffff",
+    textDecoration: "none",
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  },
+  section: {
+    background: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "20px",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    padding: "24px",
+    display: "grid",
+    gap: "18px",
+  },
+  sectionHeader: {
+    display: "grid",
+    gap: "8px",
+  },
+  sectionEyebrow: {
+    margin: 0,
+    fontSize: "12px",
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    fontWeight: 700,
+    color: "#6b7280",
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: "24px",
+    lineHeight: 1.15,
+    fontWeight: 800,
+    color: "#111827",
+    letterSpacing: "-0.03em",
+  },
+  sectionText: {
+    margin: 0,
+    fontSize: "15px",
+    lineHeight: 1.65,
+    color: "#4b5563",
+  },
+  gridThree: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: "16px",
+  },
+  gridTwo: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, 0.9fr)",
+    gap: "16px",
+    alignItems: "start",
+  },
+  card: {
+    borderRadius: "16px",
+    border: "1px solid #e5e7eb",
+    background: "#ffffff",
+    padding: "20px",
+    display: "grid",
+    gap: "12px",
+  },
+  cardTop: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+  cardLabel: {
+    margin: 0,
+    fontSize: "12px",
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    fontWeight: 700,
+    color: "#6b7280",
+  },
+  cardTitle: {
+    margin: 0,
+    fontSize: "24px",
+    lineHeight: 1.15,
+    fontWeight: 800,
+    color: "#111827",
+    letterSpacing: "-0.03em",
+  },
+  cardText: {
+    margin: 0,
+    fontSize: "15px",
+    lineHeight: 1.65,
+    color: "#4b5563",
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: "30px",
+    padding: "0 10px",
+    borderRadius: "999px",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    border: "1px solid transparent",
+  },
+  badgeReady: {
+    background: "#f3f4f6",
+    borderColor: "#d1d5db",
+    color: "#374151",
+  },
+  badgeWarning: {
+    background: "#fff7ed",
+    borderColor: "#fdba74",
+    color: "#9a3412",
+  },
+  badgeCritical: {
+    background: "#fef2f2",
+    borderColor: "#fca5a5",
+    color: "#b91c1c",
+  },
+  checkGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "12px",
+  },
+  checkCard: {
+    borderRadius: "14px",
+    border: "1px solid #e5e7eb",
+    background: "#f9fafb",
+    padding: "16px",
+    display: "grid",
+    gap: "6px",
+  },
+  checkLabel: {
+    margin: 0,
+    fontSize: "15px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  checkValue: {
+    margin: 0,
+    fontSize: "14px",
+    lineHeight: 1.6,
+    color: "#6b7280",
+  },
+  settingsList: {
+    display: "grid",
+    gap: "12px",
+  },
+  settingsRow: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: "16px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  settingsKey: {
+    margin: 0,
+    fontSize: "14px",
+    color: "#6b7280",
+  },
+  settingsValue: {
+    margin: 0,
+    fontSize: "15px",
+    color: "#111827",
+    fontWeight: 700,
+    textAlign: "right",
+  },
+  presetRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+  presetChip: {
+    minWidth: "64px",
+    minHeight: "42px",
+    padding: "0 14px",
+    borderRadius: "12px",
+    border: "1px solid #d1d5db",
+    background: "#f9fafb",
+    color: "#111827",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 700,
+  },
 };
 
-export const action = async ({ request }) => {
-  const { admin } = await authenticateBillingRoute(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
+function getOverallStatus(data) {
+  const statuses = [
+    data.store.status,
+    data.license.status,
+    data.checkoutRuntime.status,
+    data.tipInfrastructure.status,
   ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-            demoInfo: metafield(namespace: "$app", key: "demo_info") {
-              jsonValue
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        product: {
-          title: `${color} Snowboard`,
-          metafields: [
-            {
-              namespace: "$app",
-              key: "demo_info",
-              value: "Created by React Router Template",
-            },
-          ],
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
-  const product = responseJson.data.productCreate.product;
-  const variantId = product.variants.edges[0].node.id;
-  const variantResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-        productVariants {
-          id
-          price
-          barcode
-          createdAt
-        }
-      }
-    }`,
-    {
-      variables: {
-        productId: product.id,
-        variants: [{ id: variantId, price: "100.00" }],
-      },
-    },
-  );
-  const variantResponseJson = await variantResponse.json();
-  const metaobjectResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpsertMetaobject($handle: MetaobjectHandleInput!, $metaobject: MetaobjectUpsertInput!) {
-      metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
-        metaobject {
-          id
-          handle
-          title: field(key: "title") {
-            jsonValue
-          }
-          description: field(key: "description") {
-            jsonValue
-          }
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        handle: {
-          type: "$app:example",
-          handle: "demo-entry",
-        },
-        metaobject: {
-          fields: [
-            { key: "title", value: "Demo Entry" },
-            {
-              key: "description",
-              value:
-                "This metaobject was created by the Shopify app template to demonstrate the metaobject API.",
-            },
-          ],
-        },
-      },
-    },
-  );
-  const metaobjectResponseJson = await metaobjectResponse.json();
 
-  return {
-    product: responseJson.data.productCreate.product,
-    variant: variantResponseJson.data.productVariantsBulkUpdate.productVariants,
-    metaobject: metaobjectResponseJson.data.metaobjectUpsert.metaobject,
-  };
+  if (statuses.includes("blocked")) {
+    return "blocked";
+  }
+
+  if (statuses.includes("warning")) {
+    return "warning";
+  }
+
+  return "ready";
+}
+
+function statusLabel(status) {
+  if (status === "ready") return "Ready";
+  if (status === "blocked") return "Blocked";
+  return "Attention";
+}
+
+function badgeStyle(status) {
+  if (status === "ready") return { ...styles.badge, ...styles.badgeReady };
+  if (status === "blocked") return { ...styles.badge, ...styles.badgeCritical };
+  return { ...styles.badge, ...styles.badgeWarning };
+}
+
+export const loader = async ({ request }) => {
+  const { admin, licenseState, shopEligibility, session } =
+    await authenticateBillingRoute(request);
+  const { loadHomeDashboardData } = await import("../home-dashboard.server.js");
+
+  return loadHomeDashboardData({
+    admin,
+    licenseState,
+    shopEligibility,
+    sessionScope: session?.scope ?? "",
+  });
 };
 
 export default function Index() {
-  const fetcher = useFetcher();
+  const data = useLoaderData();
   const location = useLocation();
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
-  const additionalPageHref = appendEmbeddedSearch(
-    "/app/additional",
+  const settingsHref = appendEmbeddedSearch(
+    "/app/settings/tip-block",
     location.search,
   );
-
-  useEffect(() => {
-    if (fetcher.data?.product?.id) {
-      shopify.toast.show("Product created");
-    }
-  }, [fetcher.data?.product?.id, shopify]);
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
+  const overallStatus = getOverallStatus(data);
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
-      </s-button>
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <div style={styles.headerMeta}>
+            <div style={styles.titleRow}>
+              <h1 style={styles.pageTitle}>Home</h1>
+              <span style={badgeStyle(overallStatus)}>
+                {statusLabel(overallStatus)}
+              </span>
+            </div>
+            <p style={styles.pageIntro}>
+              This page shows whether the store, license, checkout runtime, and
+              internal tip setup are ready. Use it as an operational snapshot,
+              not an analytics dashboard.
+            </p>
+          </div>
 
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          <s-link href={additionalPageHref}>
-            additional page in the app nav
-          </s-link>
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
-      <s-section heading="Get started with products">
-        <s-paragraph>
-          Generate a product with GraphQL and get the JSON output for that
-          product. Learn more about the{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-            target="_blank"
-          >
-            productCreate
-          </s-link>{" "}
-          mutation in our API references. Includes a product{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metafields"
-            target="_blank"
-          >
-            metafield
-          </s-link>{" "}
-          and{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metaobjects"
-            target="_blank"
-          >
-            metaobject
-          </s-link>
-          .
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={generateProduct}
-            {...(isLoading ? { loading: true } : {})}
-          >
-            Generate a product
-          </s-button>
-          {fetcher.data?.product && (
-            <s-button
-              onClick={() => {
-                shopify.intents.invoke?.("edit:shopify/Product", {
-                  value: fetcher.data?.product?.id,
-                });
-              }}
-              target="_blank"
-              variant="tertiary"
-            >
-              Edit product
-            </s-button>
-          )}
-        </s-stack>
-        {fetcher.data?.product && (
-          <s-section heading="productCreate mutation">
-            <s-stack direction="block" gap="base">
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>{JSON.stringify(fetcher.data.product, null, 2)}</code>
-                </pre>
-              </s-box>
+          <a href={settingsHref} style={styles.action}>
+            Open Tip Settings
+          </a>
+        </header>
 
-              <s-heading>productVariantsBulkUpdate mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>{JSON.stringify(fetcher.data.variant, null, 2)}</code>
-                </pre>
-              </s-box>
+        <section style={styles.gridThree}>
+          <article style={styles.card}>
+            <div style={styles.cardTop}>
+              <p style={styles.cardLabel}>Store status</p>
+              <span style={badgeStyle(data.store.status)}>
+                {statusLabel(data.store.status)}
+              </span>
+            </div>
+            <h2 style={styles.cardTitle}>{data.store.title}</h2>
+            <p style={styles.cardText}>
+              Current plan: <strong>{data.store.planLabel}</strong>
+            </p>
+            <p style={styles.cardText}>{data.store.message}</p>
+          </article>
 
-              <s-heading>metaobjectUpsert mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>
-                    {JSON.stringify(fetcher.data.metaobject, null, 2)}
-                  </code>
-                </pre>
-              </s-box>
-            </s-stack>
-          </s-section>
-        )}
-      </s-section>
+          <article style={styles.card}>
+            <div style={styles.cardTop}>
+              <p style={styles.cardLabel}>License status</p>
+              <span style={badgeStyle(data.license.status)}>
+                {statusLabel(data.license.status)}
+              </span>
+            </div>
+            <h2 style={styles.cardTitle}>{data.license.title}</h2>
+            <p style={styles.cardText}>{data.license.message}</p>
+          </article>
 
-      <s-section slot="aside" heading="App template specs">
-        <s-paragraph>
-          <s-text>Framework: </s-text>
-          <s-link href="https://reactrouter.com/" target="_blank">
-            React Router
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Interface: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/app-home/using-polaris-components"
-            target="_blank"
-          >
-            Polaris web components
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>API: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            GraphQL
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Custom data: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data"
-            target="_blank"
-          >
-            Metafields &amp; metaobjects
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
-          </s-link>
-        </s-paragraph>
-      </s-section>
+          <article style={styles.card}>
+            <div style={styles.cardTop}>
+              <p style={styles.cardLabel}>Checkout runtime</p>
+              <span style={badgeStyle(data.checkoutRuntime.status)}>
+                {statusLabel(data.checkoutRuntime.status)}
+              </span>
+            </div>
+            <h2 style={styles.cardTitle}>{data.checkoutRuntime.title}</h2>
+            <p style={styles.cardText}>{data.checkoutRuntime.message}</p>
+          </article>
+        </section>
 
-      <s-section slot="aside" heading="Next steps">
-        <s-unordered-list>
-          <s-list-item>
-            Build an{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/getting-started/build-app-example"
-              target="_blank"
-            >
-              example app
-            </s-link>
-          </s-list-item>
-          <s-list-item>
-            Explore Shopify&apos;s API with{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-              target="_blank"
-            >
-              GraphiQL
-            </s-link>
-          </s-list-item>
-        </s-unordered-list>
-      </s-section>
-    </s-page>
+        <section style={styles.gridTwo}>
+          <article style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <p style={styles.sectionEyebrow}>Tip setup</p>
+              <h2 style={styles.sectionTitle}>{data.tipInfrastructure.title}</h2>
+              <p style={styles.sectionText}>{data.tipInfrastructure.message}</p>
+            </div>
+
+            <div style={styles.checkGrid}>
+              {data.tipInfrastructure.checks.map((check) => (
+                <div key={check.label} style={styles.checkCard}>
+                  <p style={styles.checkLabel}>{check.label}</p>
+                  <p style={styles.checkValue}>{check.value}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <p style={styles.sectionEyebrow}>Current tip settings</p>
+              <h2 style={styles.sectionTitle}>{data.settingsSummary.heading}</h2>
+              <p style={styles.sectionText}>
+                This is a compact summary of what buyers currently see in the
+                checkout tip block.
+              </p>
+            </div>
+
+            <div style={styles.settingsList}>
+              <div style={styles.settingsRow}>
+                <p style={styles.settingsKey}>Button label</p>
+                <p style={styles.settingsValue}>{data.settingsSummary.ctaLabel}</p>
+              </div>
+              <div style={styles.settingsRow}>
+                <p style={styles.settingsKey}>Hide until opt-in</p>
+                <p style={styles.settingsValue}>
+                  {data.settingsSummary.hideUntilOptIn ? "On" : "Off"}
+                </p>
+              </div>
+              <div style={{ display: "grid", gap: "10px" }}>
+                <p style={styles.settingsKey}>Preset percentages</p>
+                <div style={styles.presetRow}>
+                  {data.settingsSummary.presets.map((preset) => (
+                    <span key={preset} style={styles.presetChip}>
+                      {preset}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+      </div>
+    </div>
   );
 }
 
-export const headers = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+export const headers = (args) => boundary.headers(args);

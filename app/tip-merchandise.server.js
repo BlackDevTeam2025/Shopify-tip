@@ -290,6 +290,53 @@ export async function ensureTipMerchandise(admin, config = {}) {
   };
 }
 
+export async function inspectTipMerchandise(admin, config = {}) {
+  const validation = await validateSavedMerchandise(admin, {
+    productId: config.tip_product_id,
+    variantId: config.tip_variant_id,
+  });
+  const errors = [];
+  let productId = validation.productId;
+  let variantId = validation.variantId;
+
+  if (!productId || !variantId) {
+    const existing = await findExistingTipProduct(admin);
+    productId = productId || existing.productId;
+    variantId = variantId || existing.variantId;
+    errors.push(...existing.errors);
+  }
+
+  const publication = await getOnlineStorePublication(admin);
+  errors.push(...publication.errors);
+
+  const status =
+    errors.length > 0
+      ? "warning"
+      : productId && variantId && publication.publicationId
+        ? "ready"
+        : "warning";
+  let message = errors[0]?.message ?? "";
+
+  if (!message && (!productId || !variantId)) {
+    message =
+      "Internal tip merchandise is missing. Open Tip Settings to let the app repair it.";
+  } else if (!message && !publication.publicationId) {
+    message =
+      "The Online Store publication is not available for the internal tip product.";
+  } else if (!message) {
+    message = "Internal tip product and variant are ready for checkout.";
+  }
+
+  return {
+    status,
+    message,
+    productId,
+    variantId,
+    publicationId: publication.publicationId,
+    errors,
+  };
+}
+
 export const tipMerchandiseConstants = {
   TIP_PRODUCT_TAG,
   TIP_PRODUCT_TITLE,
