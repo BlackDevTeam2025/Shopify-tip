@@ -1,3 +1,5 @@
+import { ensureTipMerchandise } from "./tip-merchandise.server.js";
+
 export const TIP_CONFIG_NAMESPACE = "tip_block_settings";
 export const TIP_CONFIG_KEY = "config";
 export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
@@ -7,6 +9,7 @@ export const DEFAULT_THANK_YOU_TEXT = "THANK YOU, WE APPRECIATE IT.";
 export const DEFAULT_CTA_LABEL = "Add tip";
 export const DEFAULT_CUSTOM_TEXT_COLOR = "#1A1C1E";
 export const DEFAULT_CUSTOM_BORDER_COLOR = "#737785";
+export const DEFAULT_TIP_INFRASTRUCTURE_STATUS = "pending";
 
 function normalizeBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -125,7 +128,10 @@ export function getDefaultTipConfig() {
     transform_active: false,
     custom_amount_enabled: true,
     hide_until_opt_in: false,
+    tip_product_id: "",
     tip_variant_id: "",
+    tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+    tip_infrastructure_error: "",
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
@@ -175,8 +181,20 @@ export function buildTipRuntimeConfig({
       savedConfig.hide_until_opt_in,
       defaults.hide_until_opt_in,
     ),
+    tip_product_id: normalizeText(
+      savedConfig.tip_product_id,
+      defaults.tip_product_id,
+    ),
     tip_variant_id: normalizeProductVariantId(
       savedConfig.tip_variant_id ?? defaults.tip_variant_id,
+    ),
+    tip_infrastructure_status: normalizeText(
+      savedConfig.tip_infrastructure_status,
+      defaults.tip_infrastructure_status,
+    ),
+    tip_infrastructure_error: normalizeText(
+      savedConfig.tip_infrastructure_error,
+      defaults.tip_infrastructure_error,
     ),
     heading: normalizeText(
       savedConfig.heading ?? savedConfig.widget_title,
@@ -238,9 +256,6 @@ export function buildTipConfigFromFormData(formData) {
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",
     hide_until_opt_in: formData.get("hide_until_opt_in") === "on",
-    tip_variant_id: normalizeProductVariantId(
-      formData.get("tip_variant_id") || "",
-    ),
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
     support_text: normalizeText(
       formData.get("support_text"),
@@ -285,16 +300,30 @@ async function fetchShopTipConfig(admin) {
 
 export async function ensureTipConfigRuntimeState(admin, enabled) {
   const { value } = await fetchShopTipConfig(admin);
-  const { needsSync, config } = getTipConfigSyncPayload({
+  const { needsSync, config: syncedConfig } = getTipConfigSyncPayload({
     storedValue: value,
     enabled,
   });
+  const infrastructureResult = await ensureTipMerchandise(admin, syncedConfig);
+  const config = buildTipRuntimeConfig({
+    savedConfig: {
+      ...syncedConfig,
+      tip_product_id: infrastructureResult.productId,
+      tip_variant_id: infrastructureResult.variantId,
+      tip_infrastructure_status: infrastructureResult.status,
+      tip_infrastructure_error: infrastructureResult.errorMessage,
+    },
+    enabled,
+    transformActive: syncedConfig.transform_active,
+  });
+  const infrastructureChanged =
+    JSON.stringify(config) !== JSON.stringify(syncedConfig);
 
-  if (!needsSync && value) {
+  if (!needsSync && !infrastructureChanged && value) {
     return {
       synced: false,
       config,
-      errors: [],
+      errors: infrastructureResult.errors,
     };
   }
 
@@ -302,7 +331,7 @@ export async function ensureTipConfigRuntimeState(admin, enabled) {
   return {
     synced: result.errors.length === 0,
     config,
-    errors: result.errors,
+    errors: [...infrastructureResult.errors, ...result.errors],
   };
 }
 

@@ -8,7 +8,10 @@ const DEFAULTS = {
   transform_active: false,
   custom_amount_enabled: true,
   hide_until_opt_in: false,
+  tip_product_id: "",
   tip_variant_id: "",
+  tip_infrastructure_status: "pending",
+  tip_infrastructure_error: "",
   heading: "Add tip",
   support_text: "Show your support for the team.",
   thank_you_text: "THANK YOU, WE APPRECIATE IT.",
@@ -108,9 +111,21 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         parsed.hide_until_opt_in,
         DEFAULTS.hide_until_opt_in,
       ),
+      tip_product_id: normalizeText(
+        parsed.tip_product_id,
+        DEFAULTS.tip_product_id,
+      ),
       tip_variant_id: normalizeText(
         parsed.tip_variant_id,
         DEFAULTS.tip_variant_id,
+      ),
+      tip_infrastructure_status: normalizeText(
+        parsed.tip_infrastructure_status,
+        DEFAULTS.tip_infrastructure_status,
+      ),
+      tip_infrastructure_error: normalizeText(
+        parsed.tip_infrastructure_error,
+        DEFAULTS.tip_infrastructure_error,
       ),
       heading: normalizeText(
         parsed.heading ?? parsed.widget_title,

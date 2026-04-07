@@ -8,6 +8,7 @@ import {
   DEFAULT_HEADING,
   DEFAULT_SUPPORT_TEXT,
   DEFAULT_THANK_YOU_TEXT,
+  DEFAULT_TIP_INFRASTRUCTURE_STATUS,
   DEFAULT_TIP_PERCENTAGES,
   buildTipConfigFromFormData,
   buildTipRuntimeConfig,
@@ -42,7 +43,10 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     transform_active: false,
     custom_amount_enabled: false,
     hide_until_opt_in: false,
+    tip_product_id: "",
     tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
+    tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+    tip_infrastructure_error: "",
     heading: "Support our crew",
     support_text: "Thank you for supporting the staff.",
     thank_you_text: "THANK YOU.",
@@ -64,7 +68,6 @@ test("buildTipConfigFromFormData normalizes the compact admin settings payload",
   formData.set("preset_3", "21");
   formData.set("custom_amount_enabled", "on");
   formData.set("hide_until_opt_in", "on");
-  formData.set("tip_variant_id", "1");
   formData.set("custom_text_color", "1a1c1e");
   formData.set("custom_border_color", "#737785");
 
@@ -73,7 +76,6 @@ test("buildTipConfigFromFormData normalizes the compact admin settings payload",
     transform_active: false,
     custom_amount_enabled: true,
     hide_until_opt_in: true,
-    tip_variant_id: "gid://shopify/ProductVariant/1",
     heading: "Add gratuity",
     support_text: "Show your support.",
     thank_you_text: "THANK YOU, TEAM.",
@@ -154,7 +156,10 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
       transform_active: false,
       custom_amount_enabled: false,
       hide_until_opt_in: false,
+      tip_product_id: "",
       tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
+      tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+      tip_infrastructure_error: "",
       heading: "Legacy title",
       support_text: "a",
       thank_you_text: "c",
@@ -173,7 +178,10 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
     transform_active: false,
     custom_amount_enabled: true,
     hide_until_opt_in: true,
+    tip_product_id: "",
     tip_variant_id: "",
+    tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+    tip_infrastructure_error: "",
     heading: "Support our team",
     support_text: "a",
     thank_you_text: "THANK YOU.",
@@ -201,7 +209,10 @@ test("getDefaultTipConfig uses editable three-preset defaults", () => {
     transform_active: false,
     custom_amount_enabled: true,
     hide_until_opt_in: false,
+    tip_product_id: "",
     tip_variant_id: "",
+    tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+    tip_infrastructure_error: "",
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
@@ -212,7 +223,7 @@ test("getDefaultTipConfig uses editable three-preset defaults", () => {
   });
 });
 
-test("ensureTipConfigRuntimeState persists a default config when the metafield is missing", async () => {
+test("ensureTipConfigRuntimeState persists config plus auto-created tip merchandise when the metafield is missing", async () => {
   const calls = [];
   const admin = {
     graphql: async (_query, options) => {
@@ -232,6 +243,76 @@ test("ensureTipConfigRuntimeState persists a default config when the metafield i
       }
 
       if (calls.length === 2) {
+        return {
+          json: async () => ({
+            data: {
+              products: {
+                edges: [],
+              },
+            },
+          }),
+        };
+      }
+
+      if (calls.length === 3) {
+        return {
+          json: async () => ({
+            data: {
+              productCreate: {
+                product: {
+                  id: "gid://shopify/Product/1",
+                  variants: {
+                    edges: [
+                      {
+                        node: {
+                          id: "gid://shopify/ProductVariant/1",
+                        },
+                      },
+                    ],
+                  },
+                },
+                userErrors: [],
+              },
+            },
+          }),
+        };
+      }
+
+      if (calls.length === 4) {
+        return {
+          json: async () => ({
+            data: {
+              publications: {
+                edges: [
+                  {
+                    node: {
+                      id: "gid://shopify/Publication/1",
+                      name: "Online Store",
+                    },
+                  },
+                ],
+              },
+            },
+          }),
+        };
+      }
+
+      if (calls.length === 5) {
+        return {
+          json: async () => ({
+            data: {
+              publishablePublish: {
+                publishable: {
+                  id: "gid://shopify/Product/1",
+                },
+                userErrors: [],
+              },
+            },
+          }),
+        };
+      }
+
+      if (calls.length === 6) {
         return {
           json: async () => ({
             data: {
@@ -260,6 +341,17 @@ test("ensureTipConfigRuntimeState persists a default config when the metafield i
   const result = await ensureTipConfigRuntimeState(admin, true);
 
   assert.equal(result.synced, true);
-  assert.equal(calls.length, 3);
-  assert.match(calls[2].options.variables.input[0].value, /"enabled":true/);
+  assert.equal(calls.length, 7);
+  assert.match(
+    calls[6].options.variables.input[0].value,
+    /"enabled":true/,
+  );
+  assert.match(
+    calls[6].options.variables.input[0].value,
+    /"tip_product_id":"gid:\/\/shopify\/Product\/1"/,
+  );
+  assert.match(
+    calls[6].options.variables.input[0].value,
+    /"tip_variant_id":"gid:\/\/shopify\/ProductVariant\/1"/,
+  );
 });

@@ -237,8 +237,12 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { buildTipConfigFromFormData, buildTipRuntimeConfig, saveTipConfig } =
-    await import("../tip-config.server.js");
+  const {
+    buildTipConfigFromFormData,
+    buildTipRuntimeConfig,
+    loadTipConfig,
+    saveTipConfig,
+  } = await import("../tip-config.server.js");
   const { admin, licenseState, session } =
     await authenticateBillingRoute(request);
   const licenseActive = isLicenseActive(licenseState);
@@ -247,8 +251,15 @@ export const action = async ({ request }) => {
     : { active: false, cartTransformId: null, errors: [] };
   const formData = await request.formData();
   const settings = buildTipConfigFromFormData(formData);
+  const existingConfig = await loadTipConfig(admin, {
+    enabled: licenseActive,
+    transformActive: transformStatus.active,
+  });
   const config = buildTipRuntimeConfig({
-    savedConfig: settings,
+    savedConfig: {
+      ...existingConfig,
+      ...settings,
+    },
     enabled: licenseActive,
     transformActive: transformStatus.active,
   });
@@ -301,6 +312,19 @@ export default function TipBlockSettings() {
       [nextValues.preset_1, nextValues.preset_2, nextValues.preset_3].join(","),
     );
   };
+  const infrastructureStatus =
+    draftConfig.tip_infrastructure_status === "error"
+      ? "Tip setup needs attention"
+      : isLoading
+        ? "Repairing tip setup"
+        : "Tip setup ready";
+  const infrastructureTone =
+    draftConfig.tip_infrastructure_status === "error" ? "critical" : "success";
+  const infrastructureMessage =
+    draftConfig.tip_infrastructure_status === "error"
+      ? draftConfig.tip_infrastructure_error ||
+        "The app could not verify the internal tip product for this shop."
+      : "The app manages the internal tip product and variant automatically.";
 
   return (
     <s-page title="Tip Settings">
@@ -422,6 +446,11 @@ export default function TipBlockSettings() {
             </div>
 
             <div style={styles.presetsPanel}>
+              <s-banner tone={infrastructureTone}>
+                <strong>{infrastructureStatus}</strong>
+                <div>{infrastructureMessage}</div>
+              </s-banner>
+
               <div style={styles.presetsGrid}>
                 <div style={styles.fieldGroup}>
                   <label htmlFor="preset_1" style={styles.label}>
@@ -500,31 +529,6 @@ export default function TipBlockSettings() {
                 </div>
               </label>
             </div>
-
-            <details style={styles.advancedDetails}>
-              <summary style={styles.advancedSummary}>Advanced</summary>
-              <div style={{ ...styles.fieldGroup, marginTop: "18px" }}>
-                <label htmlFor="tip_variant_id" style={styles.label}>
-                  Tip variant ID
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="tip_variant_id"
-                    name="tip_variant_id"
-                    value={draftConfig.tip_variant_id}
-                    onChange={(event) =>
-                      updateDraft("tip_variant_id", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="gid://shopify/ProductVariant/123456789"
-                  />
-                </div>
-                <p style={styles.helper}>
-                  Required for the extension to add or update the tip line in
-                  checkout.
-                </p>
-              </div>
-            </details>
           </div>
 
           <div style={styles.actionBar}>
