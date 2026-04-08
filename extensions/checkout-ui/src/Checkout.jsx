@@ -108,6 +108,14 @@ function hasCustomAmountInput(value) {
   return String(value ?? "").trim().length > 0;
 }
 
+function formatCustomAmountInput(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return "0";
+  }
+
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
 function getInitialSelection({
   existingTipLine,
   hideUntilOptIn,
@@ -454,6 +462,18 @@ function TipBlockExtension() {
     await handleApplyTip();
   };
 
+  const changeCustomAmount = (delta) => {
+    const currentValue = Number.parseFloat(String(customAmount || "0").trim());
+    const nextValue = Math.max(
+      0,
+      (Number.isFinite(currentValue) ? currentValue : 0) + delta,
+    );
+
+    setCustomAmount(formatCustomAmountInput(nextValue));
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
   if (!optionsExpanded) {
     return (
       <s-grid
@@ -542,17 +562,50 @@ function TipBlockExtension() {
       </s-grid>
 
       {isCustomSelected && settings.custom_amount_enabled && (
-        <s-grid gap="small">
-          <s-text-field
-            name="custom-amount"
-            value={customAmount}
-            onChange={(event) => {
-              setCustomAmount(event.currentTarget.value);
-              setErrorMessage(null);
-              setSuccessMessage(null);
-            }}
-            label="Custom amount"
-          />
+        <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small">
+          <s-grid
+            gridTemplateColumns="minmax(0, 1fr) auto auto"
+            gap="small"
+            alignItems="center"
+          >
+            <s-text-field
+              name="custom-amount"
+              value={customAmount}
+              onChange={(event) => {
+                setCustomAmount(event.currentTarget.value);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+              label="Custom tip"
+            />
+            <s-button
+              type="button"
+              variant="secondary"
+              accessibilityLabel="Decrease custom tip"
+              disabled={isLoading}
+              onClick={() => changeCustomAmount(-1)}
+            >
+              -
+            </s-button>
+            <s-button
+              type="button"
+              variant="secondary"
+              accessibilityLabel="Increase custom tip"
+              disabled={isLoading}
+              onClick={() => changeCustomAmount(1)}
+            >
+              +
+            </s-button>
+          </s-grid>
+
+          <s-button
+            variant="primary"
+            loading={isLoading}
+            disabled={disablePrimaryAction}
+            onClick={handlePrimaryAction}
+          >
+            Update tip
+          </s-button>
         </s-grid>
       )}
 
@@ -570,16 +623,6 @@ function TipBlockExtension() {
         </s-stack>
       )}
       */}
-
-      <s-button
-        variant="primary"
-        inlineSize="fill"
-        loading={isLoading}
-        disabled={disablePrimaryAction}
-        onClick={handlePrimaryAction}
-      >
-        Update tip
-      </s-button>
 
       <s-text type="small" tone="subdued">
         {settings.thank_you_text}

@@ -27,6 +27,13 @@ test("checkout extension source uses editable preset parsing and the custom-only
   );
   assert.equal(checkoutSource.includes("choice.key === \"custom\""), true);
   assert.equal(checkoutSource.includes("void handleApplyTip"), true);
+  assert.equal(checkoutSource.includes('label="Custom tip"'), true);
+  assert.equal(
+    checkoutSource.includes('gridTemplateColumns="minmax(0, 1fr) auto"'),
+    true,
+  );
+  assert.equal(checkoutSource.includes("changeCustomAmount(-1)"), true);
+  assert.equal(checkoutSource.includes("changeCustomAmount(1)"), true);
   assert.equal(checkoutSource.includes("thank_you_text"), true);
   assert.equal(checkoutSource.includes("cta_label"), true);
   assert.equal(checkoutSource.includes("<s-press-button"), true);
