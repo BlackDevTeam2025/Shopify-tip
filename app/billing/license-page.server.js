@@ -5,10 +5,15 @@ export function buildLicensePageState({
   const licenseStatus = licenseState?.licenseStatus ?? "none";
   const isLicensed =
     licenseStatus === "active" || licenseStatus === "bypass";
+  const hasBillingIssue = licenseStatus === "frozen";
 
   return {
-    mode: shopEligibility?.eligible ? "purchase" : "ineligible",
-    canPurchase: shopEligibility?.eligible && !isLicensed,
+    mode: !shopEligibility?.eligible
+      ? "ineligible"
+      : hasBillingIssue
+        ? "billing_issue"
+        : "purchase",
+    canManagePlan: shopEligibility?.eligible && !isLicensed,
     licenseStatus,
     planDisplayName: shopEligibility?.publicDisplayName ?? "Unknown",
     worksForPlusStoresMessage: "This app works for Shopify Plus stores.",

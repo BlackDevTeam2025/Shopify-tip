@@ -127,7 +127,7 @@ export function getDefaultTipConfig() {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
-    hide_until_opt_in: false,
+    hide_until_opt_in: true,
     tip_product_id: "",
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
@@ -177,10 +177,8 @@ export function buildTipRuntimeConfig({
       savedConfig.custom_amount_enabled,
       defaults.custom_amount_enabled,
     ),
-    hide_until_opt_in: normalizeBoolean(
-      savedConfig.hide_until_opt_in,
-      defaults.hide_until_opt_in,
-    ),
+    // Tip choices are always opt-in in checkout, even for legacy configs.
+    hide_until_opt_in: true,
     tip_product_id: normalizeText(
       savedConfig.tip_product_id,
       defaults.tip_product_id,
@@ -255,7 +253,7 @@ export function buildTipConfigFromFormData(formData) {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",
-    hide_until_opt_in: formData.get("hide_until_opt_in") === "on",
+    hide_until_opt_in: true,
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
     support_text: normalizeText(
       formData.get("support_text"),

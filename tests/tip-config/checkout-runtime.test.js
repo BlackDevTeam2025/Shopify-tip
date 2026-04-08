@@ -18,7 +18,7 @@ test("returns parsed runtime config from shop app metafields using the new seman
         namespace: "tip_block_settings",
         key: "config",
         value:
-          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":true,"tip_variant_id":"","heading":"Support our team","support_text":"a","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21","custom_text_color":"#111111","custom_border_color":"#222222"}',
+          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":false,"tip_variant_id":"","heading":"Support our team","support_text":"a","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21","custom_text_color":"#111111","custom_border_color":"#222222"}',
       },
     },
   ]);
@@ -61,7 +61,7 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
-    hide_until_opt_in: false,
+    hide_until_opt_in: true,
     tip_product_id: "",
     tip_variant_id: "",
     tip_infrastructure_status: "pending",

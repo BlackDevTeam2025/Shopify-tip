@@ -29,7 +29,7 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="preset_3"'), true);
   assert.equal(
     routeSource.includes("Hide tip choices until the buyer opts in"),
-    true,
+    false,
   );
   assert.equal(routeSource.includes("tip_variant_id"), false);
   assert.equal(routeSource.includes("Tip setup ready"), true);

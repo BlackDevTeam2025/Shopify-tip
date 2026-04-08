@@ -39,10 +39,8 @@ test("license routes preserve embedded context on internal redirects", () => {
     true,
   );
   assert.equal(
-    licenseSource.includes(
-      'throwEmbeddedRedirect(adminContext, "/app/license")',
-    ),
-    true,
+    licenseSource.includes('throwEmbeddedRedirect(adminContext, "/app/license")'),
+    false,
   );
   assert.equal(
     confirmSource.includes('throwEmbeddedRedirect(adminContext, "/app")'),

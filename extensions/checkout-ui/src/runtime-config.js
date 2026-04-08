@@ -7,7 +7,7 @@ const DEFAULTS = {
   plus_only: true,
   transform_active: false,
   custom_amount_enabled: true,
-  hide_until_opt_in: false,
+  hide_until_opt_in: true,
   tip_product_id: "",
   tip_variant_id: "",
   tip_infrastructure_status: "pending",
@@ -107,10 +107,7 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         parsed.custom_amount_enabled,
         DEFAULTS.custom_amount_enabled,
       ),
-      hide_until_opt_in: normalizeBoolean(
-        parsed.hide_until_opt_in,
-        DEFAULTS.hide_until_opt_in,
-      ),
+      hide_until_opt_in: true,
       tip_product_id: normalizeText(
         parsed.tip_product_id,
         DEFAULTS.tip_product_id,

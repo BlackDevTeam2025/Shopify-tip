@@ -32,9 +32,9 @@ test("calculateSubtotalTipAmount derives tip amount from subtotal percentage", (
   );
 });
 
-test("isValidCustomAmount only accepts positive numeric input", () => {
+test("isValidCustomAmount accepts zero and positive numeric input", () => {
   assert.equal(isValidCustomAmount("12.5"), true);
-  assert.equal(isValidCustomAmount("0"), false);
+  assert.equal(isValidCustomAmount("0"), true);
   assert.equal(isValidCustomAmount("-1"), false);
   assert.equal(isValidCustomAmount("abc"), false);
 });

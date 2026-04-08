@@ -1,5 +1,3 @@
-import { shouldUseTestCharge } from "./env.server.js";
-
 async function getDbClient(dbClient) {
   if (dbClient) {
     return dbClient;
@@ -9,40 +7,153 @@ async function getDbClient(dbClient) {
   return defaultDbClient;
 }
 
-export function selectActiveOneTimePurchase(purchases = []) {
-  return (
-    purchases.find(
-      (purchase) =>
-        purchase?.status === "ACTIVE" || purchase?.status === "ACCEPTED",
-    ) ?? null
-  );
+const SUBSCRIPTION_PRIORITY = {
+  ACTIVE: 6,
+  FROZEN: 5,
+  ACCEPTED: 4,
+  PENDING: 3,
+  CANCELLED: 2,
+  EXPIRED: 1,
+  DECLINED: 0,
+};
+
+function normalizeStatus(status) {
+  if (typeof status !== "string" || !status.trim()) {
+    return "none";
+  }
+
+  return status.trim().toLowerCase();
+}
+
+function createdAtValue(subscription) {
+  const timestamp = Date.parse(subscription?.createdAt ?? "");
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+async function executeAdminJson(admin, query, variables) {
+  const response = await admin.graphql(query, variables ? { variables } : {});
+  return response.json();
+}
+
+export function selectRelevantSubscription(subscriptions = []) {
+  return subscriptions
+    .filter(Boolean)
+    .sort((left, right) => {
+      const priorityDelta =
+        (SUBSCRIPTION_PRIORITY[right?.status] ?? -1) -
+        (SUBSCRIPTION_PRIORITY[left?.status] ?? -1);
+
+      if (priorityDelta !== 0) {
+        return priorityDelta;
+      }
+
+      return createdAtValue(right) - createdAtValue(left);
+    })[0] ?? null;
 }
 
 export function buildLicenseState({
   shop,
-  purchases = [],
+  subscriptions = [],
+  cachedLicense = null,
   now = new Date(),
 }) {
-  const activePurchase = selectActiveOneTimePurchase(purchases);
+  const activeSubscription = selectRelevantSubscription(subscriptions);
 
-  if (!activePurchase) {
+  if (activeSubscription) {
+    const normalizedStatus = normalizeStatus(activeSubscription.status);
+
+    if (normalizedStatus !== "active") {
+      return {
+        shop,
+        licenseStatus: normalizedStatus,
+        purchaseId: activeSubscription.id ?? null,
+        purchaseName: activeSubscription.name ?? null,
+        isTest: Boolean(activeSubscription.test),
+        activatedAt: null,
+      };
+    }
+
     return {
       shop,
-      licenseStatus: "none",
-      purchaseId: null,
-      purchaseName: null,
-      isTest: false,
+      licenseStatus: "active",
+      purchaseId: activeSubscription.id,
+      purchaseName: activeSubscription.name ?? null,
+      isTest: Boolean(activeSubscription.test),
+      activatedAt: now,
+    };
+  }
+
+  const cachedStatus = normalizeStatus(cachedLicense?.licenseStatus);
+
+  if (
+    cachedStatus === "frozen" ||
+    cachedStatus === "cancelled" ||
+    cachedStatus === "declined" ||
+    cachedStatus === "expired"
+  ) {
+    return {
+      shop,
+      licenseStatus: cachedStatus,
+      purchaseId: cachedLicense?.purchaseId ?? null,
+      purchaseName: cachedLicense?.purchaseName ?? null,
+      isTest: Boolean(cachedLicense?.isTest),
       activatedAt: null,
     };
   }
 
   return {
     shop,
-    licenseStatus: "active",
-    purchaseId: activePurchase.id,
-    purchaseName: activePurchase.name ?? null,
-    isTest: Boolean(activePurchase.test),
-    activatedAt: now,
+    licenseStatus: "none",
+    purchaseId: null,
+    purchaseName: null,
+    isTest: false,
+    activatedAt: null,
+  };
+}
+
+export function buildWebhookLicenseState({
+  shop,
+  subscription = null,
+  now = new Date(),
+}) {
+  const normalizedStatus = normalizeStatus(subscription?.status);
+
+  if (normalizedStatus === "active") {
+    return {
+      shop,
+      licenseStatus: "active",
+      purchaseId:
+        subscription?.admin_graphql_api_id || subscription?.id || null,
+      purchaseName: subscription?.name ?? null,
+      isTest: Boolean(subscription?.test),
+      activatedAt: now,
+    };
+  }
+
+  if (
+    normalizedStatus === "frozen" ||
+    normalizedStatus === "cancelled" ||
+    normalizedStatus === "declined" ||
+    normalizedStatus === "expired"
+  ) {
+    return {
+      shop,
+      licenseStatus: normalizedStatus,
+      purchaseId:
+        subscription?.admin_graphql_api_id || subscription?.id || null,
+      purchaseName: subscription?.name ?? null,
+      isTest: Boolean(subscription?.test),
+      activatedAt: null,
+    };
+  }
+
+  return {
+    shop,
+    licenseStatus: "none",
+    purchaseId: null,
+    purchaseName: null,
+    isTest: false,
+    activatedAt: null,
   };
 }
 
@@ -99,24 +210,62 @@ export async function persistLicenseState(licenseState, dbClient) {
   });
 }
 
-export async function syncShopLicenseFromBilling({
+export async function syncShopLicenseFromSubscription({
   shop,
-  billing,
+  admin,
   dbClient,
-  env = process.env,
 }) {
-  const { LIFETIME_PLAN } = await import("./config.server.js");
-  const billingCheck = await billing.check({
-    plans: [LIFETIME_PLAN],
-    isTest: shouldUseTestCharge(env),
-  });
-
+  const cachedLicense = await getCachedLicense(shop, dbClient);
+  const json = await executeAdminJson(
+    admin,
+    `#graphql
+    query TipAppActiveSubscriptions {
+      currentAppInstallation {
+        activeSubscriptions {
+          id
+          name
+          status
+          createdAt
+        }
+      }
+    }`,
+  );
+  const subscriptions = json.data?.currentAppInstallation?.activeSubscriptions ?? [];
   const licenseState = buildLicenseState({
     shop,
-    purchases: billingCheck.oneTimePurchases,
+    subscriptions,
+    cachedLicense,
   });
 
   return persistLicenseState(licenseState, dbClient);
+}
+
+export async function syncShopLicenseFromSubscriptionWebhook({
+  shop,
+  payload,
+  admin,
+  dbClient,
+}) {
+  const subscriptionPayload =
+    payload?.app_subscription && typeof payload.app_subscription === "object"
+      ? payload.app_subscription
+      : payload;
+  const nextState = subscriptionPayload?.status
+    ? buildWebhookLicenseState({
+        shop,
+        subscription: subscriptionPayload,
+      })
+    : null;
+
+  if (nextState) {
+    return persistLicenseState(nextState, dbClient);
+  }
+
+  return syncShopLicenseFromSubscription({
+    shop,
+    admin,
+    dbClient,
+  });
 }
 
 export async function clearShopLicense(shop, dbClient) {

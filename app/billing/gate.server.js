@@ -4,7 +4,7 @@ import { authenticate } from "../shopify.server";
 import {
   createBypassLicenseState,
   isLicenseActive,
-  syncShopLicenseFromBilling,
+  syncShopLicenseFromSubscription,
 } from "./license.server";
 import { shouldBypassBilling } from "./env.server";
 import { ensureTipConfigRuntimeState } from "../tip-config.server.js";
@@ -64,9 +64,9 @@ export async function authenticateBillingRoute(
     };
   }
 
-  const licenseState = await syncShopLicenseFromBilling({
+  const licenseState = await syncShopLicenseFromSubscription({
     shop: adminContext.session.shop,
-    billing: adminContext.billing,
+    admin: adminContext.admin,
   });
   const licenseActive = isLicenseActive(licenseState);
   const accessDecision = getBillingRouteAccessDecision({

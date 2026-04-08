@@ -331,7 +331,9 @@ export default function TipBlockSettings() {
       <div style={styles.page}>
         <div style={styles.hero}>
           <h1 style={styles.title}>Tipping</h1>
-          <p style={styles.subtitle}>Edit the tip choices shown at checkout.</p>
+          <p style={styles.subtitle}>
+            Edit the tip choices shown after the buyer opts in at checkout.
+          </p>
         </div>
 
         <fetcher.Form method="POST" style={styles.card}>
@@ -509,25 +511,6 @@ export default function TipBlockSettings() {
                   </div>
                 </div>
               </div>
-
-              <div style={styles.divider} />
-
-              <label style={styles.toggleCard}>
-                <input
-                  type="checkbox"
-                  name="hide_until_opt_in"
-                  checked={draftConfig.hide_until_opt_in}
-                  onChange={(event) =>
-                    updateDraft("hide_until_opt_in", event.target.checked)
-                  }
-                  style={styles.checkbox}
-                />
-                <div>
-                  <p style={styles.checkboxTitle}>
-                    Hide tip choices until the buyer opts in
-                  </p>
-                </div>
-              </label>
             </div>
           </div>
 

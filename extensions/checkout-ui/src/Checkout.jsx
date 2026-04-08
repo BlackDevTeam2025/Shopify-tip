@@ -104,6 +104,10 @@ function canRemoveTipLine(instructions) {
   return instructions?.lines?.canRemoveCartLine !== false;
 }
 
+function hasCustomAmountInput(value) {
+  return String(value ?? "").trim().length > 0;
+}
+
 function getInitialSelection({
   existingTipLine,
   hideUntilOptIn,
@@ -175,12 +179,6 @@ function buildTipChoices({
       secondaryLabel: "Choose amount",
     });
   }
-
-  fixedChoices.push({
-    key: "none",
-    primaryLabel: "None",
-    secondaryLabel: formatCurrency(0, currencyCode),
-  });
 
   return fixedChoices;
 }
@@ -255,16 +253,14 @@ function TipBlockExtension() {
   ]);
 
   const isCustomSelected = selectedTip === "custom";
-  const isNoneSelected = selectedTip === "none";
+  const customAmountProvided = hasCustomAmountInput(customAmount);
   const isCustomAmountValid =
     !isCustomSelected || isValidCustomAmount(customAmount);
   const tipAmount = useMemo(() => {
-    if (isNoneSelected) {
-      return 0;
-    }
-
     if (isCustomSelected) {
-      return isCustomAmountValid ? Number.parseFloat(customAmount) : 0;
+      return isCustomAmountValid && customAmountProvided
+        ? Number.parseFloat(customAmount)
+        : 0;
     }
 
     return calculateSubtotalTipAmount({
@@ -273,31 +269,58 @@ function TipBlockExtension() {
     });
   }, [
     customAmount,
+    customAmountProvided,
     isCustomAmountValid,
     isCustomSelected,
-    isNoneSelected,
     selectedTip,
     subtotal,
   ]);
 
   const selectionLabel = isCustomSelected
     ? `Custom tip (${formatCurrency(tipAmount, currencyCode)})`
-    : isNoneSelected
-      ? "No tip"
-      : formatPercentageTipLabel({
-          percentage: Number(selectedTip),
-          amount: tipAmount,
-          currencyCode,
-        });
+    : formatPercentageTipLabel({
+        percentage: Number(selectedTip),
+        amount: tipAmount,
+        currencyCode,
+      });
 
-  const primaryActionLabel =
-    isNoneSelected && existingTipLine ? "Remove tip" : settings.cta_label;
   const disablePrimaryAction =
-    isLoading || (isCustomSelected && !isCustomAmountValid);
+    isLoading ||
+    !isCustomSelected ||
+    !customAmountProvided ||
+    !isCustomAmountValid;
 
-  const handleApplyTip = async () => {
+  const handleApplyTip = async ({
+    choiceKey = selectedTip,
+    customValue = customAmount,
+  } = {}) => {
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    const customChoiceSelected = choiceKey === "custom";
+    const customValueProvided = hasCustomAmountInput(customValue);
+    const customValueIsValid =
+      !customChoiceSelected || isValidCustomAmount(customValue);
+    const nextTipAmount = customChoiceSelected
+      ? customValueProvided && customValueIsValid
+        ? Number.parseFloat(customValue)
+        : 0
+      : calculateSubtotalTipAmount({
+          subtotal,
+          percentage: Number(choiceKey),
+        });
+    const nextSelectionLabel = customChoiceSelected
+      ? `Custom tip (${formatCurrency(nextTipAmount, currencyCode)})`
+      : formatPercentageTipLabel({
+          percentage: Number(choiceKey),
+          amount: nextTipAmount,
+          currencyCode,
+        });
+    const shouldRemoveTip =
+      customChoiceSelected &&
+      customValueProvided &&
+      customValueIsValid &&
+      nextTipAmount === 0;
 
     if (!settings.transform_active) {
       setErrorMessage(
@@ -311,20 +334,30 @@ function TipBlockExtension() {
       return;
     }
 
-    if (subtotal <= 0 && !isCustomSelected) {
+    if (subtotal <= 0 && !customChoiceSelected) {
       setErrorMessage(
         "Tip percentages need a positive subtotal before they can be applied.",
       );
       return;
     }
 
-    if (isCustomSelected && !isCustomAmountValid) {
-      setErrorMessage("Custom amount must be greater than 0.");
+    if (customChoiceSelected && !customValueProvided) {
+      setErrorMessage("Enter a custom amount before updating the tip.");
+      return;
+    }
+
+    if (customChoiceSelected && !customValueIsValid) {
+      setErrorMessage("Custom amount must be 0 or greater.");
       return;
     }
 
     if (typeof applyCartLinesChange !== "function") {
       setErrorMessage("Checkout cannot update tip lines in this payment flow.");
+      return;
+    }
+
+    if (shouldRemoveTip) {
+      await handleRemoveTip();
       return;
     }
 
@@ -341,10 +374,10 @@ function TipBlockExtension() {
     }
 
     const attributes = buildTipLineAttributes({
-      mode: isCustomSelected ? "custom" : "percentage",
-      percentage: isCustomSelected ? null : Number(selectedTip),
-      amount: tipAmount,
-      label: selectionLabel,
+      mode: customChoiceSelected ? "custom" : "percentage",
+      percentage: customChoiceSelected ? null : Number(choiceKey),
+      amount: nextTipAmount,
+      label: nextSelectionLabel,
     });
 
     setIsLoading(true);
@@ -418,11 +451,6 @@ function TipBlockExtension() {
   };
 
   const handlePrimaryAction = async () => {
-    if (isNoneSelected) {
-      await handleRemoveTip();
-      return;
-    }
-
     await handleApplyTip();
   };
 
@@ -483,13 +511,23 @@ function TipBlockExtension() {
               inlineSize="fill"
               pressed={isSelected}
               onClick={() => {
+                if (isLoading) {
+                  return;
+                }
+
                 setSelectedTip(choice.key);
                 setErrorMessage(null);
                 setSuccessMessage(null);
 
-                if (choice.key !== "custom") {
-                  setCustomAmount("");
+                if (choice.key === "custom") {
+                  return;
                 }
+
+                setCustomAmount("");
+                void handleApplyTip({
+                  choiceKey: choice.key,
+                  customValue: "",
+                });
               }}
             >
               <s-stack gap="extra-tight" inline-size="100%">
@@ -504,14 +542,7 @@ function TipBlockExtension() {
       </s-grid>
 
       {isCustomSelected && settings.custom_amount_enabled && (
-        <s-grid
-          gridTemplateColumns="auto 1fr auto"
-          gap="small"
-          alignItems="center"
-        >
-          <s-box padding="small" border="base" borderRadius="base">
-            <s-text type="strong">-</s-text>
-          </s-box>
+        <s-grid gap="small">
           <s-text-field
             name="custom-amount"
             value={customAmount}
@@ -522,16 +553,13 @@ function TipBlockExtension() {
             }}
             label="Custom amount"
           />
-          <s-box padding="small" border="base" borderRadius="base">
-            <s-text type="strong">+</s-text>
-          </s-box>
         </s-grid>
       )}
 
       {/*
         Temporary hide for the tip/subtotal summary block.
         Keep this block in place so it can be restored without rebuilding the logic.
-      {!isNoneSelected && tipAmount > 0 && (
+      {tipAmount > 0 && (
         <s-stack gap="small" inline-size="100%">
           <s-text type="small" tone="subdued">
             Estimated tip: {formatCurrency(tipAmount, currencyCode)}
@@ -550,7 +578,7 @@ function TipBlockExtension() {
         disabled={disablePrimaryAction}
         onClick={handlePrimaryAction}
       >
-        {primaryActionLabel}
+        Update tip
       </s-button>
 
       <s-text type="small" tone="subdued">

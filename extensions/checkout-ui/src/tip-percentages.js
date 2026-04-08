@@ -62,5 +62,5 @@ export function formatPercentageTipLabel({
 
 export function isValidCustomAmount(value) {
   const numericValue = Number.parseFloat(String(value ?? "").trim());
-  return Number.isFinite(numericValue) && numericValue > 0;
+  return Number.isFinite(numericValue) && numericValue >= 0;
 }

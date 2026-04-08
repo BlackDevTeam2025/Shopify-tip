@@ -12,7 +12,15 @@ test("license route copy explicitly says the app works for Shopify Plus stores",
   assert.equal(routeSource.includes("This app works for Shopify Plus stores."), true);
 });
 
-test("license route renders the detected plan for ineligible shops", () => {
-  assert.equal(routeSource.includes("planDisplayName"), true);
-  assert.equal(routeSource.includes("Detected current plan"), true);
+test("license route renders managed pricing copy instead of one-time billing copy", () => {
+  assert.equal(routeSource.includes("Choose a plan"), true);
+  assert.equal(routeSource.includes("free trial"), true);
+  assert.equal(routeSource.includes("Choose a plan"), true);
+  assert.equal(routeSource.includes("One purchase. Ongoing access."), false);
+  assert.equal(routeSource.includes("One-time lifetime license"), false);
+});
+
+test("license route links to the Shopify hosted pricing page", () => {
+  assert.equal(routeSource.includes("pricingUrl"), true);
+  assert.equal(routeSource.includes('target="_top"'), true);
 });

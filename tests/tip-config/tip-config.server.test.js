@@ -42,7 +42,7 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: false,
-    hide_until_opt_in: false,
+    hide_until_opt_in: true,
     tip_product_id: "",
     tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
@@ -67,7 +67,6 @@ test("buildTipConfigFromFormData normalizes the compact admin settings payload",
   formData.set("preset_2", "16");
   formData.set("preset_3", "21");
   formData.set("custom_amount_enabled", "on");
-  formData.set("hide_until_opt_in", "on");
   formData.set("custom_text_color", "1a1c1e");
   formData.set("custom_border_color", "#737785");
 
@@ -108,11 +107,11 @@ test("buildTipRuntimeConfig falls back to defaults for invalid preset values", (
   assert.equal(runtimeConfig.tip_percentages, DEFAULT_TIP_PERCENTAGES);
 });
 
-test("buildTipRuntimeConfig normalizes new booleans and hex colors", () => {
+test("buildTipRuntimeConfig forces opt-in behavior and normalizes hex colors", () => {
   const runtimeConfig = buildTipRuntimeConfig({
     savedConfig: {
       custom_amount_enabled: "false",
-      hide_until_opt_in: "true",
+      hide_until_opt_in: "false",
       custom_text_color: "abc",
       custom_border_color: "xyz",
     },
@@ -155,7 +154,7 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
       plus_only: true,
       transform_active: false,
       custom_amount_enabled: false,
-      hide_until_opt_in: false,
+      hide_until_opt_in: true,
       tip_product_id: "",
       tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
       tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
@@ -208,7 +207,7 @@ test("getDefaultTipConfig uses editable three-preset defaults", () => {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
-    hide_until_opt_in: false,
+    hide_until_opt_in: true,
     tip_product_id: "",
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
