@@ -45,7 +45,7 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
     false,
   );
   assert.equal(routeSource.includes("tip_variant_id"), false);
-  assert.equal(routeSource.includes("Tip setup ready"), true);
-  assert.equal(routeSource.includes("Tip setup needs attention"), true);
+  assert.equal(routeSource.includes("Tip setup ready"), false);
+  assert.equal(routeSource.includes("Tip setup needs attention"), false);
   assert.equal(routeSource.includes("Default selected preset"), true);
 });

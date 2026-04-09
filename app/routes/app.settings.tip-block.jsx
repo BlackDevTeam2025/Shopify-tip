@@ -9,8 +9,8 @@ import { ensureTipCartTransform } from "../cart-transform.server.js";
 const styles = {
   page: {
     display: "grid",
-    gap: "20px",
-    maxWidth: "980px",
+    gap: "24px",
+    maxWidth: "1180px",
     margin: "0 auto",
     width: "100%",
   },
@@ -46,14 +46,39 @@ const styles = {
     gap: "8px",
   },
   body: {
-    padding: "28px 30px",
+    padding: "30px 34px",
     display: "grid",
-    gap: "22px",
+    gap: "24px",
   },
   contentGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "18px",
+  },
+  sectionCard: {
+    display: "grid",
+    gap: "18px",
+    padding: "22px",
+    borderRadius: "22px",
+    border: "1px solid #e5e7eb",
+    background: "#fbfcfd",
+  },
+  sectionHeader: {
+    display: "grid",
+    gap: "6px",
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: "16px",
+    lineHeight: 1.3,
+    fontWeight: 800,
+    color: "#111827",
+  },
+  sectionDescription: {
+    margin: 0,
+    fontSize: "14px",
+    lineHeight: 1.6,
+    color: "#6b7280",
   },
   toggleCard: {
     display: "flex",
@@ -82,47 +107,24 @@ const styles = {
     display: "grid",
     gap: "18px",
     padding: "22px",
-    borderRadius: "20px",
-    border: "1px solid #e5e7eb",
-    background: "#f8fafc",
   },
   presetsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: "18px",
   },
-  brandingPanel: {
-    display: "grid",
-    gap: "16px",
-    padding: "20px",
-    borderRadius: "16px",
-    border: "1px solid #e5e7eb",
-    background: "#ffffff",
-  },
-  colorGrid: {
+  supportGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "14px",
+    gap: "18px",
   },
-  colorField: {
+  supportPrimary: {
+    gridColumn: "1 / -1",
+  },
+  compactRow: {
     display: "grid",
-    gap: "8px",
-  },
-  colorInputWrap: {
-    display: "grid",
-    gridTemplateColumns: "44px 1fr",
-    alignItems: "center",
-    gap: "10px",
-  },
-  colorPicker: {
-    width: "44px",
-    height: "44px",
-    border: "1px solid #dbe1ea",
-    borderRadius: "12px",
-    padding: "4px",
-    background: "#ffffff",
-    boxSizing: "border-box",
-    cursor: "pointer",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "18px",
   },
   fieldGroup: {
     display: "grid",
@@ -226,6 +228,11 @@ const styles = {
     display: "flex",
     gap: "12px",
     flexWrap: "wrap",
+    alignItems: "center",
+  },
+  actionButtons: {
+    display: "flex",
+    gap: "12px",
     alignItems: "center",
   },
 };
@@ -358,20 +365,6 @@ export default function TipBlockSettings() {
       [nextValues.preset_1, nextValues.preset_2, nextValues.preset_3].join(","),
     );
   };
-  const infrastructureStatus =
-    draftConfig.tip_infrastructure_status === "error"
-      ? "Tip setup needs attention"
-      : isLoading
-        ? "Repairing tip setup"
-        : "Tip setup ready";
-  const infrastructureTone =
-    draftConfig.tip_infrastructure_status === "error" ? "critical" : "success";
-  const infrastructureMessage =
-    draftConfig.tip_infrastructure_status === "error"
-      ? draftConfig.tip_infrastructure_error ||
-        "The app could not verify the internal tip product for this shop."
-      : "The app manages the internal tip product and variant automatically.";
-
   return (
     <s-page title="Tip Settings">
       <div style={styles.page}>
@@ -396,121 +389,54 @@ export default function TipBlockSettings() {
           <div style={styles.body}>
             <input type="hidden" name="custom_amount_enabled" value="on" />
 
-            <label style={styles.toggleCard}>
-              <input
-                type="checkbox"
-                checked={currentConfig.enabled}
-                disabled
-                readOnly
-                style={styles.checkbox}
-              />
-              <div>
-                <p style={styles.checkboxTitle}>
-                  Show tipping options at checkout
-                </p>
-                <p style={styles.checkboxHelp}>
-                  The tip form stays visible in checkout and buyers can change
-                  the selected option at any time.
-                </p>
-              </div>
-            </label>
-
-            <div style={styles.contentGrid}>
-              <div style={styles.fieldGroup}>
-                <label htmlFor="heading" style={styles.label}>
-                  Title
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="heading"
-                    name="heading"
-                    value={draftConfig.heading}
-                    onChange={(event) =>
-                      updateDraft("heading", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="Add tip"
-                  />
-                </div>
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label htmlFor="cta_label" style={styles.label}>
-                  Button label
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="cta_label"
-                    name="cta_label"
-                    value={draftConfig.cta_label}
-                    onChange={(event) =>
-                      updateDraft("cta_label", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="Update tip"
-                  />
-                </div>
-              </div>
-
-              <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
-                <label htmlFor="support_text_1" style={styles.label}>
-                  Support message 1
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="support_text_1"
-                    name="support_text_1"
-                    value={draftConfig.support_text_1 ?? draftConfig.support_text}
-                    onChange={(event) =>
-                      updateDraft("support_text_1", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="Show your support for the team."
-                  />
-                </div>
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label htmlFor="support_text_2" style={styles.label}>
-                  Support message 2
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="support_text_2"
-                    name="support_text_2"
-                    value={draftConfig.support_text_2 ?? ""}
-                    onChange={(event) =>
-                      updateDraft("support_text_2", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="Every tip goes directly to the team."
-                  />
-                </div>
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label htmlFor="support_text_3" style={styles.label}>
-                  Support message 3
-                </label>
-                <div style={styles.inputWrap}>
-                  <input
-                    id="support_text_3"
-                    name="support_text_3"
-                    value={draftConfig.support_text_3 ?? ""}
-                    onChange={(event) =>
-                      updateDraft("support_text_3", event.target.value)
-                    }
-                    style={styles.input}
-                    placeholder="A small tip makes a big difference."
-                  />
-                </div>
-                <p style={styles.helper}>
-                  Checkout rotates through these messages every 30 seconds when
-                  more than one message is filled in.
+            <div style={styles.sectionCard}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>Primary copy</h2>
+                <p style={styles.sectionDescription}>
+                  These fields control the title, CTA, and closing note shown
+                  in checkout.
                 </p>
               </div>
 
-              <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
+              <div style={styles.compactRow}>
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="heading" style={styles.label}>
+                    Title
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="heading"
+                      name="heading"
+                      value={draftConfig.heading}
+                      onChange={(event) =>
+                        updateDraft("heading", event.target.value)
+                      }
+                      style={styles.input}
+                      placeholder="Add tip"
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="cta_label" style={styles.label}>
+                    Button label
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="cta_label"
+                      name="cta_label"
+                      value={draftConfig.cta_label}
+                      onChange={(event) =>
+                        updateDraft("cta_label", event.target.value)
+                      }
+                      style={styles.input}
+                      placeholder="Update tip"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.fieldGroup}>
                 <label htmlFor="thank_you_text" style={styles.label}>
                   Thank you text
                 </label>
@@ -529,11 +455,82 @@ export default function TipBlockSettings() {
               </div>
             </div>
 
-            <div style={styles.presetsPanel}>
-              <s-banner tone={infrastructureTone}>
-                <strong>{infrastructureStatus}</strong>
-                <div>{infrastructureMessage}</div>
-              </s-banner>
+            <div style={styles.sectionCard}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>Rotating support messages</h2>
+                <p style={styles.sectionDescription}>
+                  Checkout rotates through filled messages every 30 seconds.
+                  Leave optional messages blank if you want less variation.
+                </p>
+              </div>
+
+              <div style={styles.supportGrid}>
+                <div style={{ ...styles.fieldGroup, ...styles.supportPrimary }}>
+                  <label htmlFor="support_text_1" style={styles.label}>
+                    Support message 1
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="support_text_1"
+                      name="support_text_1"
+                      value={
+                        draftConfig.support_text_1 ?? draftConfig.support_text
+                      }
+                      onChange={(event) =>
+                        updateDraft("support_text_1", event.target.value)
+                      }
+                      style={styles.input}
+                      placeholder="Show your support for the team."
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="support_text_2" style={styles.label}>
+                    Support message 2
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="support_text_2"
+                      name="support_text_2"
+                      value={draftConfig.support_text_2 ?? ""}
+                      onChange={(event) =>
+                        updateDraft("support_text_2", event.target.value)
+                      }
+                      style={styles.input}
+                      placeholder="Every tip goes directly to the staff."
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="support_text_3" style={styles.label}>
+                    Support message 3
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="support_text_3"
+                      name="support_text_3"
+                      value={draftConfig.support_text_3 ?? ""}
+                      onChange={(event) =>
+                        updateDraft("support_text_3", event.target.value)
+                      }
+                      style={styles.input}
+                      placeholder="A small tip makes a big difference."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ ...styles.sectionCard, ...styles.presetsPanel }}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>Preset percentages</h2>
+                <p style={styles.sectionDescription}>
+                  Buyers always see three percentage choices and one custom
+                  amount option in checkout.
+                </p>
+              </div>
 
               <div style={styles.presetsGrid}>
                 <div style={styles.fieldGroup}>
@@ -632,7 +629,7 @@ export default function TipBlockSettings() {
                 </s-banner>
               ) : null}
             </div>
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <div style={styles.actionButtons}>
               <s-button
                 type="button"
                 variant="secondary"
