@@ -288,10 +288,7 @@ export const action = async ({ request }) => {
     loadTipConfig,
     saveTipConfig,
   } = await import("../tip-config.server.js");
-  const { applyTipCheckoutBranding } = await import(
-    "../checkout-branding.server.js"
-  );
-  const { admin, licenseState, session, shopEligibility } =
+  const { admin, licenseState, session } =
     await authenticateBillingRoute(request);
   const licenseActive = isLicenseActive(licenseState);
   const transformStatus = licenseActive
@@ -311,30 +308,13 @@ export const action = async ({ request }) => {
     enabled: licenseActive,
     transformActive: transformStatus.active,
   });
-  const branding = await applyTipCheckoutBranding({
-    admin,
-    shopEligibility,
-    applyCheckoutBranding: config.apply_checkout_branding,
-    customTextColor: config.custom_text_color,
-    customBorderColor: config.custom_border_color,
-  });
-  const nextConfig = buildTipRuntimeConfig({
-    savedConfig: {
-      ...config,
-      checkout_branding_status: branding.status,
-      checkout_branding_error: branding.applied ? "" : branding.message ?? "",
-    },
-    enabled: licenseActive,
-    transformActive: transformStatus.active,
-  });
 
-  const result = await saveTipConfig(admin, nextConfig);
+  const result = await saveTipConfig(admin, config);
   return {
     ...result,
-    config: nextConfig,
+    config,
     saved: result.errors.length === 0,
     transformStatus,
-    branding,
   };
 };
 
@@ -391,14 +371,6 @@ export default function TipBlockSettings() {
       ? draftConfig.tip_infrastructure_error ||
         "The app could not verify the internal tip product for this shop."
       : "The app manages the internal tip product and variant automatically.";
-  const brandingState =
-    fetcher.data?.branding?.status ?? draftConfig.checkout_branding_status;
-  const brandingMessage =
-    fetcher.data?.branding?.message ?? draftConfig.checkout_branding_error;
-  const brandingTone =
-    brandingState === "applied"
-      ? "success"
-      : "warning";
 
   return (
     <s-page title="Tip Settings">
@@ -481,19 +453,61 @@ export default function TipBlockSettings() {
               </div>
 
               <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
-                <label htmlFor="support_text" style={styles.label}>
-                  Support text
+                <label htmlFor="support_text_1" style={styles.label}>
+                  Support message 1
                 </label>
-                <textarea
-                  id="support_text"
-                  name="support_text"
-                  value={draftConfig.support_text}
-                  onChange={(event) =>
-                    updateDraft("support_text", event.target.value)
-                  }
-                  style={styles.textarea}
-                  placeholder="Show your support for the team."
-                />
+                <div style={styles.inputWrap}>
+                  <input
+                    id="support_text_1"
+                    name="support_text_1"
+                    value={draftConfig.support_text_1 ?? draftConfig.support_text}
+                    onChange={(event) =>
+                      updateDraft("support_text_1", event.target.value)
+                    }
+                    style={styles.input}
+                    placeholder="Show your support for the team."
+                  />
+                </div>
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="support_text_2" style={styles.label}>
+                  Support message 2
+                </label>
+                <div style={styles.inputWrap}>
+                  <input
+                    id="support_text_2"
+                    name="support_text_2"
+                    value={draftConfig.support_text_2 ?? ""}
+                    onChange={(event) =>
+                      updateDraft("support_text_2", event.target.value)
+                    }
+                    style={styles.input}
+                    placeholder="Every tip goes directly to the team."
+                  />
+                </div>
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="support_text_3" style={styles.label}>
+                  Support message 3
+                </label>
+                <div style={styles.inputWrap}>
+                  <input
+                    id="support_text_3"
+                    name="support_text_3"
+                    value={draftConfig.support_text_3 ?? ""}
+                    onChange={(event) =>
+                      updateDraft("support_text_3", event.target.value)
+                    }
+                    style={styles.input}
+                    placeholder="A small tip makes a big difference."
+                  />
+                </div>
+                <p style={styles.helper}>
+                  Checkout rotates through these messages every 30 seconds when
+                  more than one message is filled in.
+                </p>
               </div>
 
               <div style={{ ...styles.fieldGroup, ...styles.fieldFull }}>
@@ -513,105 +527,6 @@ export default function TipBlockSettings() {
                   />
                 </div>
               </div>
-            </div>
-
-            <div style={styles.brandingPanel}>
-              <label style={styles.toggleCard}>
-                <input
-                  type="checkbox"
-                  name="apply_checkout_branding"
-                  checked={draftConfig.apply_checkout_branding}
-                  onChange={(event) =>
-                    updateDraft(
-                      "apply_checkout_branding",
-                      event.target.checked,
-                    )
-                  }
-                  style={styles.checkbox}
-                />
-                <div>
-                  <p style={styles.checkboxTitle}>
-                    Apply colors to checkout profile
-                  </p>
-                  <p style={styles.checkboxHelp}>
-                    Uses Checkout Branding API when the store is eligible and
-                    branding scopes are granted.
-                  </p>
-                </div>
-              </label>
-
-              <div style={styles.colorGrid}>
-                <div style={styles.colorField}>
-                  <label htmlFor="custom_text_color" style={styles.label}>
-                    Text color
-                  </label>
-                  <div style={styles.colorInputWrap}>
-                    <input
-                      id="custom_text_color_picker"
-                      type="color"
-                      value={draftConfig.custom_text_color}
-                      onChange={(event) =>
-                        updateDraft("custom_text_color", event.target.value)
-                      }
-                      style={styles.colorPicker}
-                    />
-                    <div style={styles.inputWrap}>
-                      <input
-                        id="custom_text_color"
-                        name="custom_text_color"
-                        value={draftConfig.custom_text_color}
-                        onChange={(event) =>
-                          updateDraft("custom_text_color", event.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="#1A1C1E"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={styles.colorField}>
-                  <label htmlFor="custom_border_color" style={styles.label}>
-                    Border color
-                  </label>
-                  <div style={styles.colorInputWrap}>
-                    <input
-                      id="custom_border_color_picker"
-                      type="color"
-                      value={draftConfig.custom_border_color}
-                      onChange={(event) =>
-                        updateDraft("custom_border_color", event.target.value)
-                      }
-                      style={styles.colorPicker}
-                    />
-                    <div style={styles.inputWrap}>
-                      <input
-                        id="custom_border_color"
-                        name="custom_border_color"
-                        value={draftConfig.custom_border_color}
-                        onChange={(event) =>
-                          updateDraft("custom_border_color", event.target.value)
-                        }
-                        style={styles.input}
-                        placeholder="#737785"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {brandingState !== "disabled" || brandingMessage ? (
-                <s-banner tone={brandingTone}>
-                  <strong>
-                    {brandingState === "applied"
-                      ? "Checkout branding applied"
-                      : brandingState === "warning"
-                        ? "Checkout branding pending"
-                        : "Checkout branding disabled"}
-                  </strong>
-                  {brandingMessage ? <div>{brandingMessage}</div> : null}
-                </s-banner>
-              ) : null}
             </div>
 
             <div style={styles.presetsPanel}>

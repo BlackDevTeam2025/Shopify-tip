@@ -21,17 +21,25 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("Checkout Preview"), false);
   assert.equal(routeSource.includes("previewWrap"), false);
   assert.equal(routeSource.includes('name="heading"'), true);
-  assert.equal(routeSource.includes('name="support_text"'), true);
+  assert.equal(routeSource.includes('name="support_text"'), false);
+  assert.equal(routeSource.includes('name="support_text_1"'), true);
+  assert.equal(routeSource.includes('name="support_text_2"'), true);
+  assert.equal(routeSource.includes('name="support_text_3"'), true);
   assert.equal(routeSource.includes('name="cta_label"'), true);
   assert.equal(routeSource.includes('name="thank_you_text"'), true);
   assert.equal(routeSource.includes('name="preset_1"'), true);
   assert.equal(routeSource.includes('name="preset_2"'), true);
   assert.equal(routeSource.includes('name="preset_3"'), true);
   assert.equal(routeSource.includes('name="default_tip_choice"'), true);
-  assert.equal(routeSource.includes('name="apply_checkout_branding"'), true);
-  assert.equal(routeSource.includes('name="custom_text_color"'), true);
-  assert.equal(routeSource.includes('name="custom_border_color"'), true);
-  assert.equal(routeSource.includes("Apply colors to checkout profile"), true);
+  assert.equal(routeSource.includes('name="tip_card_background"'), false);
+  assert.equal(routeSource.includes('name="tip_card_border"'), false);
+  assert.equal(routeSource.includes('name="tip_card_radius"'), false);
+  assert.equal(routeSource.includes('name="apply_checkout_branding"'), false);
+  assert.equal(routeSource.includes('name="custom_text_color"'), false);
+  assert.equal(routeSource.includes('name="custom_border_color"'), false);
+  assert.equal(routeSource.includes("Apply colors to checkout profile"), false);
+  assert.equal(routeSource.includes("Support message 1"), true);
+  assert.equal(routeSource.includes("Auto-rotate every 30 seconds"), false);
   assert.equal(
     routeSource.includes("Hide tip choices until the buyer opts in"),
     false,

@@ -2,14 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  DEFAULT_APPLY_CHECKOUT_BRANDING,
-  DEFAULT_CHECKOUT_BRANDING_STATUS,
   DEFAULT_CTA_LABEL,
-  DEFAULT_CUSTOM_BORDER_COLOR,
-  DEFAULT_CUSTOM_TEXT_COLOR,
   DEFAULT_DEFAULT_TIP_CHOICE,
   DEFAULT_HEADING,
   DEFAULT_SUPPORT_TEXT,
+  DEFAULT_SUPPORT_TEXT_1,
+  DEFAULT_SUPPORT_TEXT_2,
+  DEFAULT_SUPPORT_TEXT_3,
   DEFAULT_THANK_YOU_TEXT,
   DEFAULT_TIP_INFRASTRUCTURE_STATUS,
   DEFAULT_TIP_METRICS_ENABLED,
@@ -53,33 +52,31 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
     tip_infrastructure_error: "",
-    apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Support our crew",
     support_text: "Thank you for supporting the staff.",
+    support_text_1: "Thank you for supporting the staff.",
+    support_text_2: "",
+    support_text_3: "",
     thank_you_text: "THANK YOU.",
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: "5,10,15",
-    custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
-    custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });
 });
 
 test("buildTipConfigFromFormData normalizes the compact admin settings payload", () => {
   const formData = new FormData();
   formData.set("heading", "Add gratuity");
-  formData.set("support_text", "Show your support.");
+  formData.set("support_text_1", "Show your support.");
+  formData.set("support_text_2", "Tips help the team.");
+  formData.set("support_text_3", "Every amount matters.");
   formData.set("thank_you_text", "THANK YOU, TEAM.");
   formData.set("cta_label", "Add tip now");
   formData.set("preset_1", "12");
   formData.set("preset_2", "16");
   formData.set("preset_3", "21");
   formData.set("custom_amount_enabled", "on");
-  formData.set("custom_text_color", "1a1c1e");
-  formData.set("custom_border_color", "#737785");
 
   assert.deepEqual(buildTipConfigFromFormData(formData), {
     plus_only: true,
@@ -87,18 +84,16 @@ test("buildTipConfigFromFormData normalizes the compact admin settings payload",
     custom_amount_enabled: true,
     hide_until_opt_in: false,
     default_tip_choice: DEFAULT_DEFAULT_TIP_CHOICE,
-    apply_checkout_branding: false,
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: true,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Add gratuity",
     support_text: "Show your support.",
+    support_text_1: "Show your support.",
+    support_text_2: "Tips help the team.",
+    support_text_3: "Every amount matters.",
     thank_you_text: "THANK YOU, TEAM.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
-    custom_text_color: "#1A1C1E",
-    custom_border_color: "#737785",
   });
 });
 
@@ -124,14 +119,12 @@ test("buildTipRuntimeConfig falls back to defaults for invalid preset values", (
   assert.equal(runtimeConfig.tip_percentages, DEFAULT_TIP_PERCENTAGES);
 });
 
-test("buildTipRuntimeConfig keeps the tip form visible and normalizes hex colors", () => {
+test("buildTipRuntimeConfig keeps the tip form visible and normalizes default choice", () => {
   const runtimeConfig = buildTipRuntimeConfig({
     savedConfig: {
       custom_amount_enabled: "false",
       hide_until_opt_in: "false",
       default_tip_choice: "preset_3",
-      custom_text_color: "abc",
-      custom_border_color: "xyz",
     },
     enabled: true,
   });
@@ -139,8 +132,6 @@ test("buildTipRuntimeConfig keeps the tip form visible and normalizes hex colors
   assert.equal(runtimeConfig.custom_amount_enabled, false);
   assert.equal(runtimeConfig.hide_until_opt_in, false);
   assert.equal(runtimeConfig.default_tip_choice, "preset_3");
-  assert.equal(runtimeConfig.custom_text_color, "#AABBCC");
-  assert.equal(runtimeConfig.custom_border_color, DEFAULT_CUSTOM_BORDER_COLOR);
 });
 
 test("normalizeProductVariantId accepts raw numeric IDs", () => {
@@ -179,18 +170,16 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
       tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
       tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
       tip_infrastructure_error: "",
-      apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
-      checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-      checkout_branding_error: "",
       tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
       tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
       heading: "Legacy title",
       support_text: "a",
+      support_text_1: "a",
+      support_text_2: "",
+      support_text_3: "",
       thank_you_text: "c",
       cta_label: DEFAULT_CTA_LABEL,
       tip_percentages: "10,15,20",
-      custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
-      custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
     },
   });
 });
@@ -207,18 +196,16 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
     tip_infrastructure_error: "",
-    apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Support our team",
     support_text: "a",
+    support_text_1: "a",
+    support_text_2: "",
+    support_text_3: "",
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
-    custom_text_color: "#111111",
-    custom_border_color: "#222222",
   };
 
   const payload = getTipConfigSyncPayload({
@@ -244,18 +231,16 @@ test("getDefaultTipConfig uses editable three-preset defaults", () => {
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
     tip_infrastructure_error: "",
-    apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
+    support_text_1: DEFAULT_SUPPORT_TEXT_1,
+    support_text_2: DEFAULT_SUPPORT_TEXT_2,
+    support_text_3: DEFAULT_SUPPORT_TEXT_3,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,
-    custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
-    custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   });
 });
 
@@ -378,10 +363,7 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
 
   assert.equal(result.synced, true);
   assert.equal(calls.length, 7);
-  assert.match(
-    calls[6].options.variables.input[0].value,
-    /"enabled":true/,
-  );
+  assert.match(calls[6].options.variables.input[0].value, /"enabled":true/);
   assert.match(
     calls[6].options.variables.input[0].value,
     /"tip_product_id":"gid:\/\/shopify\/Product\/1"/,

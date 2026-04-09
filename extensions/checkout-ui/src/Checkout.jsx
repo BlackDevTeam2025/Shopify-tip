@@ -211,6 +211,14 @@ function buildTipChoices({
   return fixedChoices;
 }
 
+function getSupportMessages(settings) {
+  return [
+    settings.support_text_1 ?? settings.support_text,
+    settings.support_text_2,
+    settings.support_text_3,
+  ].filter((message) => String(message ?? "").trim().length > 0);
+}
+
 export default async () => {
   render(<TipBlockExtension />, document.body);
 };
@@ -245,6 +253,7 @@ function TipBlockExtension() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [supportMessageIndex, setSupportMessageIndex] = useState(0);
   const autoSyncKeyRef = useRef("");
   const choices = useMemo(
     () =>
@@ -256,6 +265,13 @@ function TipBlockExtension() {
       }),
     [currencyCode, percentages, settings.custom_amount_enabled, subtotal],
   );
+  const supportMessages = useMemo(
+    () => getSupportMessages(settings),
+    [settings.support_text, settings.support_text_1, settings.support_text_2, settings.support_text_3],
+  );
+  const supportMessagesKey = supportMessages.join("\u0000");
+  const visibleSupportMessage =
+    supportMessages[supportMessageIndex] ?? settings.support_text;
 
   useEffect(() => {
     const nextSelection = getInitialSelection({
@@ -276,6 +292,23 @@ function TipBlockExtension() {
     settings.default_tip_choice,
     percentages.join(","),
   ]);
+
+  useEffect(() => {
+    if (supportMessages.length <= 1) {
+      setSupportMessageIndex(0);
+      return;
+    }
+
+    setSupportMessageIndex(Math.floor(Math.random() * supportMessages.length));
+
+    const intervalId = setInterval(() => {
+      setSupportMessageIndex((previousIndex) =>
+        (previousIndex + 1) % supportMessages.length,
+      );
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [supportMessagesKey]);
 
   const isCustomSelected = selectedTip === "custom";
   const customAmountProvided = hasCustomAmountInput(customAmount);
@@ -322,7 +355,6 @@ function TipBlockExtension() {
   const appliedTipAmount = savedTipAmount;
   const hasAppliedTip = existingTipLine && Number.isFinite(appliedTipAmount);
   const displayedTipAmount = hasAppliedTip ? appliedTipAmount : 0;
-  const estimatedTotal = subtotal + displayedTipAmount;
 
   const disablePrimaryAction =
     isLoading ||
@@ -590,14 +622,14 @@ function TipBlockExtension() {
     <s-grid
       background="subdued"
       border="base"
-      borderRadius="large-100"
+      borderRadius="large"
       padding="base"
       gap="base"
     >
       <s-stack gap="small" inline-size="100%">
         <s-text type="strong">{settings.heading}</s-text>
         <s-text type="small" tone="subdued">
-          {settings.support_text}
+          {visibleSupportMessage}
         </s-text>
       </s-stack>
 
@@ -694,12 +726,6 @@ function TipBlockExtension() {
           </s-text>
           <s-text type="small">
             {formatCurrency(displayedTipAmount, currencyCode)}
-          </s-text>
-          <s-text type="small" tone="subdued">
-            Estimated total
-          </s-text>
-          <s-text type="small">
-            {formatCurrency(estimatedTotal, currencyCode)}
           </s-text>
         </s-grid>
       ) : null}

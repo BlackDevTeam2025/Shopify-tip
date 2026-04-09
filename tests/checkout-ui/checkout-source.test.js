@@ -32,8 +32,20 @@ test("checkout extension source keeps the form visible and uses the custom-only 
   assert.equal(checkoutSource.includes("accessory={"), true);
   assert.equal(checkoutSource.includes("changeCustomAmount(-1)"), true);
   assert.equal(checkoutSource.includes("changeCustomAmount(1)"), true);
-  assert.equal(checkoutSource.includes("Estimated total"), true);
-  assert.equal(checkoutSource.includes(">Tip<"), false);
+  assert.equal(checkoutSource.includes("Estimated total"), false);
+  assert.equal(checkoutSource.includes("setInterval(() =>"), true);
+  assert.equal(checkoutSource.includes("30000"), true);
+  assert.equal(checkoutSource.includes('background="subdued"'), true);
+  assert.equal(checkoutSource.includes('border="base"'), true);
+  assert.equal(checkoutSource.includes('borderRadius="large"'), true);
+  assert.equal(checkoutSource.includes("support_text_1"), true);
+  assert.equal(checkoutSource.includes("support_text_2"), true);
+  assert.equal(checkoutSource.includes("support_text_3"), true);
+  assert.equal(
+    checkoutSource.match(/<s-text type="small" tone="subdued">\s*Tip\s*<\/s-text>/g)
+      ?.length ?? 0,
+    1,
+  );
   assert.equal(checkoutSource.includes("thank_you_text"), true);
   assert.equal(checkoutSource.includes("cta_label"), true);
   assert.equal(checkoutSource.includes("<s-press-button"), true);

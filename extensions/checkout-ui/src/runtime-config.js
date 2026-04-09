@@ -14,18 +14,16 @@ const DEFAULTS = {
   tip_variant_id: "",
   tip_infrastructure_status: "pending",
   tip_infrastructure_error: "",
-  apply_checkout_branding: false,
-  checkout_branding_status: "disabled",
-  checkout_branding_error: "",
   tip_metrics_enabled: true,
   tip_metrics_window_days: 60,
   heading: "Add tip",
   support_text: "Show your support for the team.",
+  support_text_1: "Show your support for the team.",
+  support_text_2: "",
+  support_text_3: "",
   thank_you_text: "THANK YOU, WE APPRECIATE IT.",
   cta_label: "Update tip",
   tip_percentages: DEFAULT_TIP_PERCENTAGES,
-  custom_text_color: "#1A1C1E",
-  custom_border_color: "#737785",
 };
 
 function normalizeBoolean(value, fallback = false) {
@@ -38,26 +36,6 @@ function normalizeBoolean(value, fallback = false) {
 function normalizeText(value, fallback) {
   const normalized = value?.toString().trim();
   return normalized ? normalized : fallback;
-}
-
-function normalizeHexColor(value, fallback) {
-  const normalized = String(value ?? "")
-    .trim()
-    .replace(/^#/, "");
-
-  if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    return `#${normalized.toUpperCase()}`;
-  }
-
-  if (/^[0-9a-fA-F]{3}$/.test(normalized)) {
-    const expanded = normalized
-      .split("")
-      .map((character) => `${character}${character}`)
-      .join("");
-    return `#${expanded.toUpperCase()}`;
-  }
-
-  return fallback;
 }
 
 function normalizePresetEntry(value, fallback) {
@@ -112,6 +90,25 @@ function normalizeDefaultTipChoice(
   return fallback;
 }
 
+function getSupportMessages(parsed = {}) {
+  const primary = normalizeText(
+    parsed.support_text_1 ?? parsed.support_text ?? parsed.caption1,
+    DEFAULTS.support_text_1,
+  );
+
+  return {
+    support_text_1: primary,
+    support_text_2: normalizeText(
+      parsed.support_text_2,
+      DEFAULTS.support_text_2,
+    ),
+    support_text_3: normalizeText(
+      parsed.support_text_3,
+      DEFAULTS.support_text_3,
+    ),
+  };
+}
+
 export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
   const match = appMetafields.find(
     (entry) =>
@@ -126,6 +123,7 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
 
   try {
     const parsed = JSON.parse(match.metafield.value);
+    const supportMessages = getSupportMessages(parsed);
 
     return {
       ...DEFAULTS,
@@ -160,18 +158,6 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         parsed.tip_infrastructure_error,
         DEFAULTS.tip_infrastructure_error,
       ),
-      apply_checkout_branding: normalizeBoolean(
-        parsed.apply_checkout_branding,
-        DEFAULTS.apply_checkout_branding,
-      ),
-      checkout_branding_status: normalizeText(
-        parsed.checkout_branding_status,
-        DEFAULTS.checkout_branding_status,
-      ),
-      checkout_branding_error: normalizeText(
-        parsed.checkout_branding_error,
-        DEFAULTS.checkout_branding_error,
-      ),
       tip_metrics_enabled: normalizeBoolean(
         parsed.tip_metrics_enabled,
         DEFAULTS.tip_metrics_enabled,
@@ -184,10 +170,10 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
         parsed.heading ?? parsed.widget_title,
         DEFAULTS.heading,
       ),
-      support_text: normalizeText(
-        parsed.support_text ?? parsed.caption1,
-        DEFAULTS.support_text,
-      ),
+      support_text: supportMessages.support_text_1,
+      support_text_1: supportMessages.support_text_1,
+      support_text_2: supportMessages.support_text_2,
+      support_text_3: supportMessages.support_text_3,
       thank_you_text: normalizeText(
         parsed.thank_you_text ?? parsed.caption3,
         DEFAULTS.thank_you_text,
@@ -196,14 +182,6 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
       tip_percentages: normalizeTipPercentages(
         parsed.tip_percentages,
         DEFAULTS.tip_percentages,
-      ),
-      custom_text_color: normalizeHexColor(
-        parsed.custom_text_color,
-        DEFAULTS.custom_text_color,
-      ),
-      custom_border_color: normalizeHexColor(
-        parsed.custom_border_color,
-        DEFAULTS.custom_border_color,
       ),
     };
   } catch {

@@ -52,7 +52,7 @@ export function cartTransformRun(input) {
       return {
         lineUpdate: {
           cartLineId: line.id,
-          title: getAttributeValue(line, "tipLabel", "legacyTipLabel") ?? "Tip",
+          title: "Tip",
           price: {
             adjustment: {
               fixedPricePerUnit: {

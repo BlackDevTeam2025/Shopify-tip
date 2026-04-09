@@ -18,7 +18,7 @@ test("returns parsed runtime config from shop app metafields using the new seman
         namespace: "tip_block_settings",
         key: "config",
         value:
-          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":false,"tip_variant_id":"","heading":"Support our team","support_text":"a","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21","custom_text_color":"#111111","custom_border_color":"#222222"}',
+          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":false,"tip_variant_id":"","heading":"Support our team","support_text_1":"a","support_text_2":"b","support_text_3":"c","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21"}',
       },
     },
   ]);
@@ -34,18 +34,16 @@ test("returns parsed runtime config from shop app metafields using the new seman
     tip_variant_id: "",
     tip_infrastructure_status: "pending",
     tip_infrastructure_error: "",
-    apply_checkout_branding: false,
-    checkout_branding_status: "disabled",
-    checkout_branding_error: "",
     tip_metrics_enabled: true,
     tip_metrics_window_days: 60,
     heading: "Support our team",
     support_text: "a",
+    support_text_1: "a",
+    support_text_2: "b",
+    support_text_3: "c",
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
-    custom_text_color: "#111111",
-    custom_border_color: "#222222",
   });
 });
 
@@ -73,18 +71,16 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
     tip_variant_id: "",
     tip_infrastructure_status: "pending",
     tip_infrastructure_error: "",
-    apply_checkout_branding: false,
-    checkout_branding_status: "disabled",
-    checkout_branding_error: "",
     tip_metrics_enabled: true,
     tip_metrics_window_days: 60,
     heading: "Support our team",
     support_text: "a",
+    support_text_1: "a",
+    support_text_2: "",
+    support_text_3: "",
     thank_you_text: "c",
     cta_label: "Update tip",
     tip_percentages: "5,10,15",
-    custom_text_color: "#1A1C1E",
-    custom_border_color: "#737785",
   });
   assert.equal(DEFAULT_TIP_PERCENTAGES, "10,15,20");
 });

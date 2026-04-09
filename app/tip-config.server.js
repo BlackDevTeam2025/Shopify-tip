@@ -5,13 +5,12 @@ export const TIP_CONFIG_KEY = "config";
 export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 export const DEFAULT_HEADING = "Add tip";
 export const DEFAULT_SUPPORT_TEXT = "Show your support for the team.";
+export const DEFAULT_SUPPORT_TEXT_1 = DEFAULT_SUPPORT_TEXT;
+export const DEFAULT_SUPPORT_TEXT_2 = "";
+export const DEFAULT_SUPPORT_TEXT_3 = "";
 export const DEFAULT_THANK_YOU_TEXT = "THANK YOU, WE APPRECIATE IT.";
 export const DEFAULT_CTA_LABEL = "Update tip";
-export const DEFAULT_CUSTOM_TEXT_COLOR = "#1A1C1E";
-export const DEFAULT_CUSTOM_BORDER_COLOR = "#737785";
 export const DEFAULT_TIP_INFRASTRUCTURE_STATUS = "pending";
-export const DEFAULT_APPLY_CHECKOUT_BRANDING = false;
-export const DEFAULT_CHECKOUT_BRANDING_STATUS = "disabled";
 export const DEFAULT_TIP_METRICS_ENABLED = true;
 export const DEFAULT_TIP_METRICS_WINDOW_DAYS = 60;
 export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
@@ -30,26 +29,6 @@ function normalizePlusOnly(value, fallback = true) {
 function normalizeText(value, fallback) {
   const normalized = value?.toString().trim();
   return normalized ? normalized : fallback;
-}
-
-function normalizeHexColor(value, fallback) {
-  const normalized = String(value ?? "")
-    .trim()
-    .replace(/^#/, "");
-
-  if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    return `#${normalized.toUpperCase()}`;
-  }
-
-  if (/^[0-9a-fA-F]{3}$/.test(normalized)) {
-    const expanded = normalized
-      .split("")
-      .map((character) => `${character}${character}`)
-      .join("");
-    return `#${expanded.toUpperCase()}`;
-  }
-
-  return fallback;
 }
 
 function normalizePositiveInteger(value, fallback) {
@@ -114,6 +93,25 @@ function getLegacySupportText(
   );
 }
 
+function getSupportMessages(savedConfig = {}) {
+  const primary = normalizeText(
+    savedConfig.support_text_1 ?? savedConfig.support_text ?? savedConfig.caption1,
+    DEFAULT_SUPPORT_TEXT_1,
+  );
+
+  return {
+    support_text_1: primary,
+    support_text_2: normalizeText(
+      savedConfig.support_text_2,
+      DEFAULT_SUPPORT_TEXT_2,
+    ),
+    support_text_3: normalizeText(
+      savedConfig.support_text_3,
+      DEFAULT_SUPPORT_TEXT_3,
+    ),
+  };
+}
+
 function getLegacyThankYouText(
   savedConfig = {},
   fallback = DEFAULT_THANK_YOU_TEXT,
@@ -160,18 +158,16 @@ export function getDefaultTipConfig() {
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
     tip_infrastructure_error: "",
-    apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
+    support_text_1: DEFAULT_SUPPORT_TEXT_1,
+    support_text_2: DEFAULT_SUPPORT_TEXT_2,
+    support_text_3: DEFAULT_SUPPORT_TEXT_3,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,
-    custom_text_color: DEFAULT_CUSTOM_TEXT_COLOR,
-    custom_border_color: DEFAULT_CUSTOM_BORDER_COLOR,
   };
 }
 
@@ -197,6 +193,7 @@ export function buildTipRuntimeConfig({
   transformActive,
 }) {
   const defaults = getDefaultTipConfig();
+  const supportMessages = getSupportMessages(savedConfig);
 
   return {
     ...defaults,
@@ -230,18 +227,6 @@ export function buildTipRuntimeConfig({
       savedConfig.tip_infrastructure_error,
       defaults.tip_infrastructure_error,
     ),
-    apply_checkout_branding: normalizeBoolean(
-      savedConfig.apply_checkout_branding,
-      defaults.apply_checkout_branding,
-    ),
-    checkout_branding_status: normalizeText(
-      savedConfig.checkout_branding_status,
-      defaults.checkout_branding_status,
-    ),
-    checkout_branding_error: normalizeText(
-      savedConfig.checkout_branding_error,
-      defaults.checkout_branding_error,
-    ),
     tip_metrics_enabled: normalizeBoolean(
       savedConfig.tip_metrics_enabled,
       defaults.tip_metrics_enabled,
@@ -254,20 +239,15 @@ export function buildTipRuntimeConfig({
       savedConfig.heading ?? savedConfig.widget_title,
       defaults.heading,
     ),
-    support_text: getLegacySupportText(savedConfig, defaults.support_text),
+    support_text: supportMessages.support_text_1,
+    support_text_1: supportMessages.support_text_1,
+    support_text_2: supportMessages.support_text_2,
+    support_text_3: supportMessages.support_text_3,
     thank_you_text: getLegacyThankYouText(savedConfig, defaults.thank_you_text),
     cta_label: normalizeText(savedConfig.cta_label, defaults.cta_label),
     tip_percentages: normalizeTipPercentages(
       savedConfig.tip_percentages,
       defaults.tip_percentages,
-    ),
-    custom_text_color: normalizeHexColor(
-      savedConfig.custom_text_color,
-      defaults.custom_text_color,
-    ),
-    custom_border_color: normalizeHexColor(
-      savedConfig.custom_border_color,
-      defaults.custom_border_color,
     ),
   };
 }
@@ -314,16 +294,24 @@ export function buildTipConfigFromFormData(formData) {
       formData.get("default_tip_choice"),
       DEFAULT_DEFAULT_TIP_CHOICE,
     ),
-    apply_checkout_branding:
-      formData.get("apply_checkout_branding") === "on",
-    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
-    checkout_branding_error: "",
     tip_metrics_enabled: true,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
     support_text: normalizeText(
-      formData.get("support_text"),
+      formData.get("support_text_1"),
       DEFAULT_SUPPORT_TEXT,
+    ),
+    support_text_1: normalizeText(
+      formData.get("support_text_1"),
+      DEFAULT_SUPPORT_TEXT_1,
+    ),
+    support_text_2: normalizeText(
+      formData.get("support_text_2"),
+      DEFAULT_SUPPORT_TEXT_2,
+    ),
+    support_text_3: normalizeText(
+      formData.get("support_text_3"),
+      DEFAULT_SUPPORT_TEXT_3,
     ),
     thank_you_text: normalizeText(
       formData.get("thank_you_text"),
@@ -331,14 +319,6 @@ export function buildTipConfigFromFormData(formData) {
     ),
     cta_label: normalizeText(formData.get("cta_label"), DEFAULT_CTA_LABEL),
     tip_percentages: normalizeTipPercentages(presetValues.join(",")),
-    custom_text_color: normalizeHexColor(
-      formData.get("custom_text_color"),
-      DEFAULT_CUSTOM_TEXT_COLOR,
-    ),
-    custom_border_color: normalizeHexColor(
-      formData.get("custom_border_color"),
-      DEFAULT_CUSTOM_BORDER_COLOR,
-    ),
   };
 }
 
