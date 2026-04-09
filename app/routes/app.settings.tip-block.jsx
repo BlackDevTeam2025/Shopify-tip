@@ -50,11 +50,6 @@ const styles = {
     display: "grid",
     gap: "24px",
   },
-  contentGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "18px",
-  },
   sectionCard: {
     display: "grid",
     gap: "18px",
@@ -75,29 +70,6 @@ const styles = {
     color: "#111827",
   },
   sectionDescription: {
-    margin: 0,
-    fontSize: "14px",
-    lineHeight: 1.6,
-    color: "#6b7280",
-  },
-  toggleCard: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "14px",
-    padding: "0",
-  },
-  checkbox: {
-    width: "20px",
-    height: "20px",
-    marginTop: "2px",
-  },
-  checkboxTitle: {
-    margin: 0,
-    fontSize: "15px",
-    fontWeight: 700,
-    color: "#111827",
-  },
-  checkboxHelp: {
     margin: 0,
     fontSize: "14px",
     lineHeight: 1.6,
@@ -129,9 +101,6 @@ const styles = {
   fieldGroup: {
     display: "grid",
     gap: "8px",
-  },
-  fieldFull: {
-    gridColumn: "1 / -1",
   },
   label: {
     fontSize: "13px",
@@ -170,49 +139,11 @@ const styles = {
     boxSizing: "border-box",
     outline: "none",
   },
-  textarea: {
-    width: "100%",
-    minHeight: "104px",
-    border: "1px solid #dbe1ea",
-    borderRadius: "16px",
-    background: "#ffffff",
-    color: "#111827",
-    padding: "14px 16px",
-    fontSize: "15px",
-    lineHeight: 1.6,
-    boxSizing: "border-box",
-    resize: "vertical",
-    fontFamily: "inherit",
-    outline: "none",
-  },
   suffix: {
     padding: "0 16px",
     fontSize: "15px",
     color: "#4b5563",
     whiteSpace: "nowrap",
-  },
-  divider: {
-    height: "1px",
-    width: "100%",
-    background: "#e5e7eb",
-  },
-  advancedDetails: {
-    borderRadius: "18px",
-    border: "1px solid #e5e7eb",
-    background: "#fbfcfd",
-    padding: "18px 20px",
-  },
-  advancedSummary: {
-    cursor: "pointer",
-    fontSize: "15px",
-    fontWeight: 700,
-    color: "#111827",
-  },
-  helper: {
-    margin: 0,
-    fontSize: "13px",
-    lineHeight: 1.6,
-    color: "#6b7280",
   },
   actionBar: {
     padding: "20px 30px",
@@ -391,7 +322,7 @@ export default function TipBlockSettings() {
 
             <div style={styles.sectionCard}>
               <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Primary copy</h2>
+                <h2 style={styles.sectionTitle}>Summary</h2>
                 <p style={styles.sectionDescription}>
                   These fields control the title, CTA, and closing note shown
                   in checkout.
