@@ -3,7 +3,7 @@ import { ensureTipMerchandise } from "./tip-merchandise.server.js";
 export const TIP_CONFIG_NAMESPACE = "tip_block_settings";
 export const TIP_CONFIG_KEY = "config";
 export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
-export const DEFAULT_HEADING = "Add tip";
+export const DEFAULT_HEADING = "Tip";
 export const DEFAULT_SUPPORT_TEXT = "Show your support for the team.";
 export const DEFAULT_SUPPORT_TEXT_1 = DEFAULT_SUPPORT_TEXT;
 export const DEFAULT_SUPPORT_TEXT_2 = "";

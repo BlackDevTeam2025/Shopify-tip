@@ -16,7 +16,7 @@ const DEFAULTS = {
   tip_infrastructure_error: "",
   tip_metrics_enabled: true,
   tip_metrics_window_days: 60,
-  heading: "Add tip",
+  heading: "Tip",
   support_text: "Show your support for the team.",
   support_text_1: "Show your support for the team.",
   support_text_2: "",
