@@ -91,6 +91,39 @@ const styles = {
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: "18px",
   },
+  brandingPanel: {
+    display: "grid",
+    gap: "16px",
+    padding: "20px",
+    borderRadius: "16px",
+    border: "1px solid #e5e7eb",
+    background: "#ffffff",
+  },
+  colorGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "14px",
+  },
+  colorField: {
+    display: "grid",
+    gap: "8px",
+  },
+  colorInputWrap: {
+    display: "grid",
+    gridTemplateColumns: "44px 1fr",
+    alignItems: "center",
+    gap: "10px",
+  },
+  colorPicker: {
+    width: "44px",
+    height: "44px",
+    border: "1px solid #dbe1ea",
+    borderRadius: "12px",
+    padding: "4px",
+    background: "#ffffff",
+    boxSizing: "border-box",
+    cursor: "pointer",
+  },
   fieldGroup: {
     display: "grid",
     gap: "8px",
@@ -116,6 +149,18 @@ const styles = {
     width: "100%",
     border: "0",
     background: "transparent",
+    color: "#111827",
+    padding: "14px 16px",
+    fontSize: "15px",
+    lineHeight: 1.4,
+    boxSizing: "border-box",
+    outline: "none",
+  },
+  select: {
+    width: "100%",
+    border: "1px solid #dbe1ea",
+    borderRadius: "16px",
+    background: "#ffffff",
     color: "#111827",
     padding: "14px 16px",
     fontSize: "15px",
@@ -243,7 +288,10 @@ export const action = async ({ request }) => {
     loadTipConfig,
     saveTipConfig,
   } = await import("../tip-config.server.js");
-  const { admin, licenseState, session } =
+  const { applyTipCheckoutBranding } = await import(
+    "../checkout-branding.server.js"
+  );
+  const { admin, licenseState, session, shopEligibility } =
     await authenticateBillingRoute(request);
   const licenseActive = isLicenseActive(licenseState);
   const transformStatus = licenseActive
@@ -263,12 +311,30 @@ export const action = async ({ request }) => {
     enabled: licenseActive,
     transformActive: transformStatus.active,
   });
+  const branding = await applyTipCheckoutBranding({
+    admin,
+    shopEligibility,
+    applyCheckoutBranding: config.apply_checkout_branding,
+    customTextColor: config.custom_text_color,
+    customBorderColor: config.custom_border_color,
+  });
+  const nextConfig = buildTipRuntimeConfig({
+    savedConfig: {
+      ...config,
+      checkout_branding_status: branding.status,
+      checkout_branding_error: branding.applied ? "" : branding.message ?? "",
+    },
+    enabled: licenseActive,
+    transformActive: transformStatus.active,
+  });
 
-  const result = await saveTipConfig(admin, config);
+  const result = await saveTipConfig(admin, nextConfig);
   return {
     ...result,
+    config: nextConfig,
     saved: result.errors.length === 0,
     transformStatus,
+    branding,
   };
 };
 
@@ -325,6 +391,14 @@ export default function TipBlockSettings() {
       ? draftConfig.tip_infrastructure_error ||
         "The app could not verify the internal tip product for this shop."
       : "The app manages the internal tip product and variant automatically.";
+  const brandingState =
+    fetcher.data?.branding?.status ?? draftConfig.checkout_branding_status;
+  const brandingMessage =
+    fetcher.data?.branding?.message ?? draftConfig.checkout_branding_error;
+  const brandingTone =
+    brandingState === "applied"
+      ? "success"
+      : "warning";
 
   return (
     <s-page title="Tip Settings">
@@ -332,7 +406,7 @@ export default function TipBlockSettings() {
         <div style={styles.hero}>
           <h1 style={styles.title}>Tipping</h1>
           <p style={styles.subtitle}>
-            Edit the tip choices shown after the buyer opts in at checkout.
+            Edit the tip choices shown directly in checkout.
           </p>
         </div>
 
@@ -348,16 +422,6 @@ export default function TipBlockSettings() {
           ) : null}
 
           <div style={styles.body}>
-            <input
-              type="hidden"
-              name="custom_text_color"
-              value={draftConfig.custom_text_color}
-            />
-            <input
-              type="hidden"
-              name="custom_border_color"
-              value={draftConfig.custom_border_color}
-            />
             <input type="hidden" name="custom_amount_enabled" value="on" />
 
             <label style={styles.toggleCard}>
@@ -371,6 +435,10 @@ export default function TipBlockSettings() {
               <div>
                 <p style={styles.checkboxTitle}>
                   Show tipping options at checkout
+                </p>
+                <p style={styles.checkboxHelp}>
+                  The tip form stays visible in checkout and buyers can change
+                  the selected option at any time.
                 </p>
               </div>
             </label>
@@ -407,7 +475,7 @@ export default function TipBlockSettings() {
                       updateDraft("cta_label", event.target.value)
                     }
                     style={styles.input}
-                    placeholder="Add tip"
+                    placeholder="Update tip"
                   />
                 </div>
               </div>
@@ -445,6 +513,105 @@ export default function TipBlockSettings() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div style={styles.brandingPanel}>
+              <label style={styles.toggleCard}>
+                <input
+                  type="checkbox"
+                  name="apply_checkout_branding"
+                  checked={draftConfig.apply_checkout_branding}
+                  onChange={(event) =>
+                    updateDraft(
+                      "apply_checkout_branding",
+                      event.target.checked,
+                    )
+                  }
+                  style={styles.checkbox}
+                />
+                <div>
+                  <p style={styles.checkboxTitle}>
+                    Apply colors to checkout profile
+                  </p>
+                  <p style={styles.checkboxHelp}>
+                    Uses Checkout Branding API when the store is eligible and
+                    branding scopes are granted.
+                  </p>
+                </div>
+              </label>
+
+              <div style={styles.colorGrid}>
+                <div style={styles.colorField}>
+                  <label htmlFor="custom_text_color" style={styles.label}>
+                    Text color
+                  </label>
+                  <div style={styles.colorInputWrap}>
+                    <input
+                      id="custom_text_color_picker"
+                      type="color"
+                      value={draftConfig.custom_text_color}
+                      onChange={(event) =>
+                        updateDraft("custom_text_color", event.target.value)
+                      }
+                      style={styles.colorPicker}
+                    />
+                    <div style={styles.inputWrap}>
+                      <input
+                        id="custom_text_color"
+                        name="custom_text_color"
+                        value={draftConfig.custom_text_color}
+                        onChange={(event) =>
+                          updateDraft("custom_text_color", event.target.value)
+                        }
+                        style={styles.input}
+                        placeholder="#1A1C1E"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={styles.colorField}>
+                  <label htmlFor="custom_border_color" style={styles.label}>
+                    Border color
+                  </label>
+                  <div style={styles.colorInputWrap}>
+                    <input
+                      id="custom_border_color_picker"
+                      type="color"
+                      value={draftConfig.custom_border_color}
+                      onChange={(event) =>
+                        updateDraft("custom_border_color", event.target.value)
+                      }
+                      style={styles.colorPicker}
+                    />
+                    <div style={styles.inputWrap}>
+                      <input
+                        id="custom_border_color"
+                        name="custom_border_color"
+                        value={draftConfig.custom_border_color}
+                        onChange={(event) =>
+                          updateDraft("custom_border_color", event.target.value)
+                        }
+                        style={styles.input}
+                        placeholder="#737785"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {brandingState !== "disabled" || brandingMessage ? (
+                <s-banner tone={brandingTone}>
+                  <strong>
+                    {brandingState === "applied"
+                      ? "Checkout branding applied"
+                      : brandingState === "warning"
+                        ? "Checkout branding pending"
+                        : "Checkout branding disabled"}
+                  </strong>
+                  {brandingMessage ? <div>{brandingMessage}</div> : null}
+                </s-banner>
+              ) : null}
             </div>
 
             <div style={styles.presetsPanel}>
@@ -510,6 +677,31 @@ export default function TipBlockSettings() {
                     <span style={styles.suffix}>%</span>
                   </div>
                 </div>
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="default_tip_choice" style={styles.label}>
+                  Default selected preset
+                </label>
+                <select
+                  id="default_tip_choice"
+                  name="default_tip_choice"
+                  value={draftConfig.default_tip_choice}
+                  onChange={(event) =>
+                    updateDraft("default_tip_choice", event.target.value)
+                  }
+                  style={styles.select}
+                >
+                  <option value="preset_1">
+                    Preset 1 ({presetValues.preset_1}%)
+                  </option>
+                  <option value="preset_2">
+                    Preset 2 ({presetValues.preset_2}%)
+                  </option>
+                  <option value="preset_3">
+                    Preset 3 ({presetValues.preset_3}%)
+                  </option>
+                </select>
               </div>
             </div>
           </div>

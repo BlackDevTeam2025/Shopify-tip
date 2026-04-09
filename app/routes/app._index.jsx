@@ -263,10 +263,33 @@ function statusLabel(status) {
   return "Attention";
 }
 
+function formatMoney(amount, currency) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(amount ?? 0));
+  } catch {
+    return `${currency} ${Number(amount ?? 0).toFixed(2)}`;
+  }
+}
+
 function badgeStyle(status) {
   if (status === "ready") return { ...styles.badge, ...styles.badgeReady };
   if (status === "blocked") return { ...styles.badge, ...styles.badgeCritical };
   return { ...styles.badge, ...styles.badgeWarning };
+}
+
+function getDefaultPresetLabel(settingsSummary) {
+  const presetMap = {
+    preset_1: settingsSummary.presets[0],
+    preset_2: settingsSummary.presets[1],
+    preset_3: settingsSummary.presets[2],
+  };
+
+  return presetMap[settingsSummary.defaultTipChoice] ?? settingsSummary.presets[1];
 }
 
 export const loader = async ({ request }) => {
@@ -276,6 +299,7 @@ export const loader = async ({ request }) => {
 
   return loadHomeDashboardData({
     admin,
+    shop: session?.shop ?? "",
     licenseState,
     shopEligibility,
     sessionScope: session?.scope ?? "",
@@ -386,9 +410,9 @@ export default function Index() {
                 <p style={styles.settingsValue}>{data.settingsSummary.ctaLabel}</p>
               </div>
               <div style={styles.settingsRow}>
-                <p style={styles.settingsKey}>Hide until opt-in</p>
+                <p style={styles.settingsKey}>Default selected preset</p>
                 <p style={styles.settingsValue}>
-                  {data.settingsSummary.hideUntilOptIn ? "On" : "Off"}
+                  {getDefaultPresetLabel(data.settingsSummary)}%
                 </p>
               </div>
               <div style={{ display: "grid", gap: "10px" }}>
@@ -403,6 +427,60 @@ export default function Index() {
               </div>
             </div>
           </article>
+        </section>
+
+        <section style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <p style={styles.sectionEyebrow}>Tip metrics</p>
+            <h2 style={styles.sectionTitle}>
+              {`Total tips (net, ${data.tipMetrics.windowDays} days)`}
+            </h2>
+            <p style={styles.sectionText}>{data.tipMetrics.message}</p>
+          </div>
+
+          <div style={styles.gridThree}>
+            <article style={styles.card}>
+              <div style={styles.cardTop}>
+                <p style={styles.cardLabel}>Net total</p>
+                <span style={badgeStyle(data.tipMetrics.status)}>
+                  {statusLabel(data.tipMetrics.status)}
+                </span>
+              </div>
+              <h2 style={styles.cardTitle}>
+                {formatMoney(data.tipMetrics.totalNet, data.tipMetrics.currency)}
+              </h2>
+              <p style={styles.cardText}>
+                {data.tipMetrics.hasData
+                  ? `Primary currency: ${data.tipMetrics.currency}`
+                  : "No paid tip rows in the current window."}
+              </p>
+            </article>
+
+            <article style={styles.card}>
+              <div style={styles.cardTop}>
+                <p style={styles.cardLabel}>Orders with tip</p>
+              </div>
+              <h2 style={styles.cardTitle}>{data.tipMetrics.ordersWithTip}</h2>
+              <p style={styles.cardText}>
+                Orders that contributed net tip amount in this window.
+              </p>
+            </article>
+
+            <article style={styles.card}>
+              <div style={styles.cardTop}>
+                <p style={styles.cardLabel}>Average tip / order</p>
+              </div>
+              <h2 style={styles.cardTitle}>
+                {formatMoney(
+                  data.tipMetrics.averageTip,
+                  data.tipMetrics.currency,
+                )}
+              </h2>
+              <p style={styles.cardText}>
+                Average net tip across tipped orders in the same currency.
+              </p>
+            </article>
+          </div>
         </section>
 
       </div>

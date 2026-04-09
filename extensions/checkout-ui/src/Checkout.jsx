@@ -1,6 +1,6 @@
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { getTipRuntimeConfigFromAppMetafields } from "./runtime-config";
 import {
   calculateSubtotalTipAmount,
@@ -116,11 +116,34 @@ function formatCustomAmountInput(value) {
   return Number.isInteger(value) ? String(value) : String(value);
 }
 
+function parseStoredTipAmount(value) {
+  const amount = Number.parseFloat(String(value ?? "").trim());
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function hasMeaningfulAmountDelta(currentAmount, nextAmount) {
+  return Math.abs(currentAmount - nextAmount) >= 0.01;
+}
+
+function getDefaultTipSelection(percentages = [], defaultTipChoice = "preset_2") {
+  const fallbackSelection = String(percentages[1] ?? percentages[0] ?? 15);
+
+  if (defaultTipChoice === "preset_1") {
+    return String(percentages[0] ?? percentages[1] ?? percentages[2] ?? 15);
+  }
+
+  if (defaultTipChoice === "preset_3") {
+    return String(percentages[2] ?? percentages[1] ?? percentages[0] ?? 15);
+  }
+
+  return fallbackSelection;
+}
+
 function getInitialSelection({
   existingTipLine,
-  hideUntilOptIn,
   customAmountEnabled,
   percentages,
+  defaultTipChoice,
 }) {
   const savedMode = getAttributeValue(
     existingTipLine?.attributes,
@@ -143,7 +166,6 @@ function getInitialSelection({
     return {
       selectedTip: "custom",
       customAmount: savedAmount,
-      optionsExpanded: true,
     };
   }
 
@@ -154,14 +176,12 @@ function getInitialSelection({
     return {
       selectedTip: savedPercentage,
       customAmount: "",
-      optionsExpanded: true,
     };
   }
 
   return {
-    selectedTip: String(percentages[1] ?? percentages[0] ?? 15),
+    selectedTip: getDefaultTipSelection(percentages, defaultTipChoice),
     customAmount: "",
-    optionsExpanded: !hideUntilOptIn,
   };
 }
 
@@ -214,20 +234,18 @@ function TipBlockExtension() {
   const subtotal = getCheckoutSubtotal(lines, tipVariantId);
   const initialSelection = getInitialSelection({
     existingTipLine,
-    hideUntilOptIn: settings.hide_until_opt_in,
     customAmountEnabled: settings.custom_amount_enabled,
     percentages,
+    defaultTipChoice: settings.default_tip_choice,
   });
   const [selectedTip, setSelectedTip] = useState(initialSelection.selectedTip);
   const [customAmount, setCustomAmount] = useState(
     initialSelection.customAmount,
   );
-  const [optionsExpanded, setOptionsExpanded] = useState(
-    initialSelection.optionsExpanded,
-  );
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const autoSyncKeyRef = useRef("");
   const choices = useMemo(
     () =>
       buildTipChoices({
@@ -242,21 +260,20 @@ function TipBlockExtension() {
   useEffect(() => {
     const nextSelection = getInitialSelection({
       existingTipLine,
-      hideUntilOptIn: settings.hide_until_opt_in,
       customAmountEnabled: settings.custom_amount_enabled,
       percentages,
+      defaultTipChoice: settings.default_tip_choice,
     });
 
     setSelectedTip(nextSelection.selectedTip);
     setCustomAmount(nextSelection.customAmount);
-    setOptionsExpanded(nextSelection.optionsExpanded);
   }, [
     existingTipLine?.id,
     getAttributeValue(existingTipLine?.attributes, TIP_MODE_ATTRIBUTE),
     getAttributeValue(existingTipLine?.attributes, TIP_PERCENTAGE_ATTRIBUTE),
     getAttributeValue(existingTipLine?.attributes, TIP_AMOUNT_ATTRIBUTE),
-    settings.hide_until_opt_in,
     settings.custom_amount_enabled,
+    settings.default_tip_choice,
     percentages.join(","),
   ]);
 
@@ -264,6 +281,17 @@ function TipBlockExtension() {
   const customAmountProvided = hasCustomAmountInput(customAmount);
   const isCustomAmountValid =
     !isCustomSelected || isValidCustomAmount(customAmount);
+  const savedTipMode = getAttributeValue(
+    existingTipLine?.attributes,
+    TIP_MODE_ATTRIBUTE,
+  );
+  const savedTipPercentage = getAttributeValue(
+    existingTipLine?.attributes,
+    TIP_PERCENTAGE_ATTRIBUTE,
+  );
+  const savedTipAmount = parseStoredTipAmount(
+    getAttributeValue(existingTipLine?.attributes, TIP_AMOUNT_ATTRIBUTE),
+  );
   const tipAmount = useMemo(() => {
     if (isCustomSelected) {
       return isCustomAmountValid && customAmountProvided
@@ -291,6 +319,10 @@ function TipBlockExtension() {
         amount: tipAmount,
         currencyCode,
       });
+  const appliedTipAmount = savedTipAmount;
+  const hasAppliedTip = existingTipLine && Number.isFinite(appliedTipAmount);
+  const displayedTipAmount = hasAppliedTip ? appliedTipAmount : 0;
+  const estimatedTotal = subtotal + displayedTipAmount;
 
   const disablePrimaryAction =
     isLoading ||
@@ -402,7 +434,6 @@ function TipBlockExtension() {
       setSuccessMessage(
         "Tip line saved. Shopify Plus pricing should update automatically.",
       );
-      setOptionsExpanded(true);
     } catch (error) {
       setErrorMessage(
         `Unable to apply tip: ${error?.message ?? "Unknown error"}`,
@@ -417,9 +448,6 @@ function TipBlockExtension() {
     setSuccessMessage(null);
 
     if (!existingTipLine) {
-      if (settings.hide_until_opt_in) {
-        setOptionsExpanded(false);
-      }
       setSuccessMessage("Tip removed from the checkout.");
       return;
     }
@@ -445,9 +473,10 @@ function TipBlockExtension() {
         throw new Error(result.message ?? "Unknown error");
       }
 
-      setSelectedTip(String(percentages[1] ?? percentages[0] ?? 15));
+      setSelectedTip(
+        getDefaultTipSelection(percentages, settings.default_tip_choice),
+      );
       setCustomAmount("");
-      setOptionsExpanded(!settings.hide_until_opt_in);
       setSuccessMessage("Tip removed from the checkout.");
     } catch (error) {
       setErrorMessage(
@@ -474,37 +503,88 @@ function TipBlockExtension() {
     setSuccessMessage(null);
   };
 
-  if (!optionsExpanded) {
-    return (
-      <s-grid
-        background="subdued"
-        border="base"
-        borderRadius="large-100"
-        padding="base"
-        gap="base"
-      >
-        <s-stack gap="small" inline-size="100%">
-          <s-text type="strong">{settings.heading}</s-text>
-          <s-text type="small" tone="subdued">
-            {settings.support_text}
-          </s-text>
-        </s-stack>
-        <s-button
-          variant="primary"
-          inlineSize="fill"
-          onClick={() => {
-            setOptionsExpanded(true);
-            setErrorMessage(null);
-            setSuccessMessage(null);
-          }}
-        >
-          {settings.cta_label}
-        </s-button>
-        {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
-        {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
-      </s-grid>
-    );
-  }
+  useEffect(() => {
+    const percentage = Number(savedTipPercentage);
+
+    if (
+      isLoading ||
+      !existingTipLine ||
+      savedTipMode !== "percentage" ||
+      !Number.isFinite(percentage) ||
+      !percentages.includes(percentage) ||
+      subtotal <= 0 ||
+      !settings.transform_active ||
+      typeof applyCartLinesChange !== "function" ||
+      !canUpdateTipLine(instructions)
+    ) {
+      return;
+    }
+
+    const nextTipAmount = calculateSubtotalTipAmount({
+      subtotal,
+      percentage,
+    });
+    const syncKey = `${existingTipLine.id}:${percentage}:${nextTipAmount.toFixed(2)}`;
+
+    if (!hasMeaningfulAmountDelta(savedTipAmount, nextTipAmount)) {
+      autoSyncKeyRef.current = "";
+      return;
+    }
+
+    if (autoSyncKeyRef.current === syncKey) {
+      return;
+    }
+
+    autoSyncKeyRef.current = syncKey;
+
+    const syncTipAmount = async () => {
+      setErrorMessage(null);
+      setIsLoading(true);
+
+      try {
+        const result = await applyCartLinesChange(
+          buildUpdateTipLineChange({
+            id: existingTipLine.id,
+            attributes: buildTipLineAttributes({
+              mode: "percentage",
+              percentage,
+              amount: nextTipAmount,
+              label: formatPercentageTipLabel({
+                percentage,
+                amount: nextTipAmount,
+                currencyCode,
+              }),
+            }),
+          }),
+        );
+
+        if (result?.type === "error") {
+          throw new Error(result.message ?? "Unknown error");
+        }
+      } catch (error) {
+        autoSyncKeyRef.current = "";
+        setErrorMessage(
+          `Unable to keep the tip in sync with the current cart: ${error?.message ?? "Unknown error"}`,
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void syncTipAmount();
+  }, [
+    applyCartLinesChange,
+    currencyCode,
+    existingTipLine?.id,
+    instructions,
+    isLoading,
+    percentages,
+    savedTipAmount,
+    savedTipMode,
+    savedTipPercentage,
+    settings.transform_active,
+    subtotal,
+  ]);
 
   return (
     <s-grid
@@ -563,40 +643,38 @@ function TipBlockExtension() {
 
       {isCustomSelected && settings.custom_amount_enabled && (
         <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small">
-          <s-grid
-            gridTemplateColumns="minmax(0, 1fr) auto auto"
-            gap="small"
-            alignItems="center"
-          >
-            <s-text-field
-              name="custom-amount"
-              value={customAmount}
-              onChange={(event) => {
-                setCustomAmount(event.currentTarget.value);
-                setErrorMessage(null);
-                setSuccessMessage(null);
-              }}
-              label="Custom tip"
-            />
-            <s-button
-              type="button"
-              variant="secondary"
-              accessibilityLabel="Decrease custom tip"
-              disabled={isLoading}
-              onClick={() => changeCustomAmount(-1)}
-            >
-              -
-            </s-button>
-            <s-button
-              type="button"
-              variant="secondary"
-              accessibilityLabel="Increase custom tip"
-              disabled={isLoading}
-              onClick={() => changeCustomAmount(1)}
-            >
-              +
-            </s-button>
-          </s-grid>
+          <s-text-field
+            name="custom-amount"
+            value={customAmount}
+            onChange={(event) => {
+              setCustomAmount(event.currentTarget.value);
+              setErrorMessage(null);
+              setSuccessMessage(null);
+            }}
+            label="Custom tip"
+            accessory={
+              <s-grid gridTemplateColumns="auto auto" gap="small">
+                <s-button
+                  type="button"
+                  variant="secondary"
+                  accessibilityLabel="Decrease custom tip"
+                  disabled={isLoading}
+                  onClick={() => changeCustomAmount(-1)}
+                >
+                  -
+                </s-button>
+                <s-button
+                  type="button"
+                  variant="secondary"
+                  accessibilityLabel="Increase custom tip"
+                  disabled={isLoading}
+                  onClick={() => changeCustomAmount(1)}
+                >
+                  +
+                </s-button>
+              </s-grid>
+            }
+          />
 
           <s-button
             variant="primary"
@@ -604,25 +682,27 @@ function TipBlockExtension() {
             disabled={disablePrimaryAction}
             onClick={handlePrimaryAction}
           >
-            Update tip
+            {settings.cta_label || "Update tip"}
           </s-button>
         </s-grid>
       )}
 
-      {/*
-        Temporary hide for the tip/subtotal summary block.
-        Keep this block in place so it can be restored without rebuilding the logic.
-      {tipAmount > 0 && (
-        <s-stack gap="small" inline-size="100%">
+      {hasAppliedTip ? (
+        <s-grid gridTemplateColumns="1fr auto" gap="extra-tight">
           <s-text type="small" tone="subdued">
-            Estimated tip: {formatCurrency(tipAmount, currencyCode)}
+            Tip
+          </s-text>
+          <s-text type="small">
+            {formatCurrency(displayedTipAmount, currencyCode)}
           </s-text>
           <s-text type="small" tone="subdued">
-            Subtotal: {formatCurrency(subtotal, currencyCode)}
+            Estimated total
           </s-text>
-        </s-stack>
-      )}
-      */}
+          <s-text type="small">
+            {formatCurrency(estimatedTotal, currencyCode)}
+          </s-text>
+        </s-grid>
+      ) : null}
 
       <s-text type="small" tone="subdued">
         {settings.thank_you_text}

@@ -6,10 +6,15 @@ export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 export const DEFAULT_HEADING = "Add tip";
 export const DEFAULT_SUPPORT_TEXT = "Show your support for the team.";
 export const DEFAULT_THANK_YOU_TEXT = "THANK YOU, WE APPRECIATE IT.";
-export const DEFAULT_CTA_LABEL = "Add tip";
+export const DEFAULT_CTA_LABEL = "Update tip";
 export const DEFAULT_CUSTOM_TEXT_COLOR = "#1A1C1E";
 export const DEFAULT_CUSTOM_BORDER_COLOR = "#737785";
 export const DEFAULT_TIP_INFRASTRUCTURE_STATUS = "pending";
+export const DEFAULT_APPLY_CHECKOUT_BRANDING = false;
+export const DEFAULT_CHECKOUT_BRANDING_STATUS = "disabled";
+export const DEFAULT_TIP_METRICS_ENABLED = true;
+export const DEFAULT_TIP_METRICS_WINDOW_DAYS = 60;
+export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
 
 function normalizeBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -42,6 +47,28 @@ function normalizeHexColor(value, fallback) {
       .map((character) => `${character}${character}`)
       .join("");
     return `#${expanded.toUpperCase()}`;
+  }
+
+  return fallback;
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function normalizeDefaultTipChoice(value, fallback = DEFAULT_DEFAULT_TIP_CHOICE) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (["preset_1", "preset_2", "preset_3"].includes(normalized)) {
+    return normalized;
   }
 
   return fallback;
@@ -127,11 +154,17 @@ export function getDefaultTipConfig() {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
-    hide_until_opt_in: true,
+    hide_until_opt_in: false,
+    default_tip_choice: DEFAULT_DEFAULT_TIP_CHOICE,
     tip_product_id: "",
     tip_variant_id: "",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
     tip_infrastructure_error: "",
+    apply_checkout_branding: DEFAULT_APPLY_CHECKOUT_BRANDING,
+    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
+    checkout_branding_error: "",
+    tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
+    tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
@@ -177,8 +210,11 @@ export function buildTipRuntimeConfig({
       savedConfig.custom_amount_enabled,
       defaults.custom_amount_enabled,
     ),
-    // Tip choices are always opt-in in checkout, even for legacy configs.
-    hide_until_opt_in: true,
+    hide_until_opt_in: false,
+    default_tip_choice: normalizeDefaultTipChoice(
+      savedConfig.default_tip_choice,
+      defaults.default_tip_choice,
+    ),
     tip_product_id: normalizeText(
       savedConfig.tip_product_id,
       defaults.tip_product_id,
@@ -193,6 +229,26 @@ export function buildTipRuntimeConfig({
     tip_infrastructure_error: normalizeText(
       savedConfig.tip_infrastructure_error,
       defaults.tip_infrastructure_error,
+    ),
+    apply_checkout_branding: normalizeBoolean(
+      savedConfig.apply_checkout_branding,
+      defaults.apply_checkout_branding,
+    ),
+    checkout_branding_status: normalizeText(
+      savedConfig.checkout_branding_status,
+      defaults.checkout_branding_status,
+    ),
+    checkout_branding_error: normalizeText(
+      savedConfig.checkout_branding_error,
+      defaults.checkout_branding_error,
+    ),
+    tip_metrics_enabled: normalizeBoolean(
+      savedConfig.tip_metrics_enabled,
+      defaults.tip_metrics_enabled,
+    ),
+    tip_metrics_window_days: normalizePositiveInteger(
+      savedConfig.tip_metrics_window_days,
+      defaults.tip_metrics_window_days,
     ),
     heading: normalizeText(
       savedConfig.heading ?? savedConfig.widget_title,
@@ -253,7 +309,17 @@ export function buildTipConfigFromFormData(formData) {
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",
-    hide_until_opt_in: true,
+    hide_until_opt_in: false,
+    default_tip_choice: normalizeDefaultTipChoice(
+      formData.get("default_tip_choice"),
+      DEFAULT_DEFAULT_TIP_CHOICE,
+    ),
+    apply_checkout_branding:
+      formData.get("apply_checkout_branding") === "on",
+    checkout_branding_status: DEFAULT_CHECKOUT_BRANDING_STATUS,
+    checkout_branding_error: "",
+    tip_metrics_enabled: true,
+    tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
     support_text: normalizeText(
       formData.get("support_text"),

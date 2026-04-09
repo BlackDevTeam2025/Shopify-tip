@@ -27,6 +27,11 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="preset_1"'), true);
   assert.equal(routeSource.includes('name="preset_2"'), true);
   assert.equal(routeSource.includes('name="preset_3"'), true);
+  assert.equal(routeSource.includes('name="default_tip_choice"'), true);
+  assert.equal(routeSource.includes('name="apply_checkout_branding"'), true);
+  assert.equal(routeSource.includes('name="custom_text_color"'), true);
+  assert.equal(routeSource.includes('name="custom_border_color"'), true);
+  assert.equal(routeSource.includes("Apply colors to checkout profile"), true);
   assert.equal(
     routeSource.includes("Hide tip choices until the buyer opts in"),
     false,
@@ -34,4 +39,5 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("tip_variant_id"), false);
   assert.equal(routeSource.includes("Tip setup ready"), true);
   assert.equal(routeSource.includes("Tip setup needs attention"), true);
+  assert.equal(routeSource.includes("Default selected preset"), true);
 });

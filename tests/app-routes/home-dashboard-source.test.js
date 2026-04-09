@@ -23,6 +23,8 @@ test("home route renders the operational dashboard sections", () => {
   assert.equal(routeSource.includes("License status"), true);
   assert.equal(routeSource.includes("Checkout runtime"), true);
   assert.equal(routeSource.includes("Current tip settings"), true);
+  assert.equal(routeSource.includes("Tip metrics"), true);
+  assert.equal(routeSource.includes("Total tips (net"), true);
   assert.equal(routeSource.includes("Open Tip Settings"), true);
 });
 

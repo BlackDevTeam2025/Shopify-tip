@@ -24,7 +24,8 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
                 plus_only: true,
                 transform_active: true,
                 custom_amount_enabled: true,
-                hide_until_opt_in: true,
+                hide_until_opt_in: false,
+                default_tip_choice: "preset_2",
                 tip_product_id: "gid://shopify/Product/1",
                 tip_variant_id: "gid://shopify/ProductVariant/1",
                 tip_infrastructure_status: "ready",
@@ -114,6 +115,7 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
 
   const dashboard = await loadHomeDashboardData({
     admin,
+    shop: "saovang-2.myshopify.com",
     licenseState: {
       licenseStatus: "active",
     },
@@ -123,6 +125,14 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
       publicDisplayName: "Shopify Plus",
     },
     sessionScope: "write_cart_transforms,write_products",
+    metricsDbClient: {
+      tipMetric: {
+        findMany: async () => [
+          { currency: "USD", netAmount: 12.5 },
+          { currency: "USD", netAmount: 7.5 },
+        ],
+      },
+    },
   });
 
   assert.equal(dashboard.header.storeName, "Saovang");
@@ -133,7 +143,11 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
   assert.equal(dashboard.tipInfrastructure.status, "ready");
   assert.equal(dashboard.scopes.status, "ready");
   assert.deepEqual(dashboard.settingsSummary.presets, ["10", "15", "20"]);
-  assert.equal(dashboard.settingsSummary.hideUntilOptIn, true);
+  assert.equal(dashboard.settingsSummary.defaultTipChoice, "preset_2");
+  assert.equal(dashboard.tipMetrics.currency, "USD");
+  assert.equal(dashboard.tipMetrics.totalNet, 20);
+  assert.equal(dashboard.tipMetrics.ordersWithTip, 2);
+  assert.equal(dashboard.tipMetrics.averageTip, 10);
 });
 
 test("loadHomeDashboardData surfaces blocked store state and missing scopes without crashing", async () => {
@@ -150,6 +164,7 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
                 transform_active: false,
                 custom_amount_enabled: true,
                 hide_until_opt_in: false,
+                default_tip_choice: "preset_2",
                 tip_product_id: "",
                 tip_variant_id: "",
                 tip_infrastructure_status: "pending",
@@ -207,6 +222,7 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
 
   const dashboard = await loadHomeDashboardData({
     admin,
+    shop: "blocked-shop.myshopify.com",
     licenseState: {
       licenseStatus: "none",
     },
@@ -216,6 +232,11 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
       publicDisplayName: "Grow",
     },
     sessionScope: "",
+    metricsDbClient: {
+      tipMetric: {
+        findMany: async () => [],
+      },
+    },
   });
 
   assert.equal(dashboard.header.readinessLabel, "Home - Attention");
@@ -234,4 +255,6 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
     ),
     true,
   );
+  assert.equal(dashboard.tipMetrics.hasData, false);
+  assert.equal(dashboard.tipMetrics.totalNet, 0);
 });

@@ -3,6 +3,7 @@ import { getTipRuntimeEnabled } from "./billing/access-policy.server.js";
 import { hasCartTransformScope } from "./cart-transform.server.js";
 import { loadTipConfig } from "./tip-config.server.js";
 import { inspectTipMerchandise } from "./tip-merchandise.server.js";
+import { loadTipMetricsSummary } from "./tip-metrics.server.js";
 
 const CRITICAL_SCOPES = [
   {
@@ -44,9 +45,11 @@ async function executeAdminJson(admin, query, variables) {
 
 export async function loadHomeDashboardData({
   admin,
+  shop,
   licenseState,
   shopEligibility,
   sessionScope = "",
+  metricsDbClient,
 }) {
   const licenseActive = isLicenseActive(licenseState);
   const runtimeEnabled = getTipRuntimeEnabled({
@@ -101,7 +104,25 @@ export async function loadHomeDashboardData({
     heading: config.heading,
     ctaLabel: config.cta_label,
     presets: config.tip_percentages.split(",").map((value) => value.trim()),
-    hideUntilOptIn: config.hide_until_opt_in,
+    defaultTipChoice: config.default_tip_choice,
+  };
+  const metricsSummary = config.tip_metrics_enabled
+    ? await loadTipMetricsSummary({
+        shop,
+        windowDays: config.tip_metrics_window_days,
+        dbClient: metricsDbClient,
+      })
+    : {
+        windowDays: config.tip_metrics_window_days,
+        currencies: [],
+        primary: null,
+        hasData: false,
+      };
+  const metricsPrimary = metricsSummary.primary ?? {
+    currency: "USD",
+    totalNet: 0,
+    ordersWithTip: 0,
+    averageTip: 0,
   };
 
   return {
@@ -170,6 +191,22 @@ export async function loadHomeDashboardData({
           status: "ready",
         },
       ],
+    },
+    tipMetrics: {
+      status: config.tip_metrics_enabled ? "ready" : "warning",
+      title: "Tip totals",
+      message: config.tip_metrics_enabled
+        ? metricsSummary.hasData
+          ? `Net tip totals for the last ${metricsSummary.windowDays} days.`
+          : `No tip orders found in the last ${metricsSummary.windowDays} days yet.`
+        : "Tip metrics are disabled in settings.",
+      windowDays: metricsSummary.windowDays,
+      hasData: metricsSummary.hasData,
+      currency: metricsPrimary.currency,
+      totalNet: metricsPrimary.totalNet,
+      ordersWithTip: metricsPrimary.ordersWithTip,
+      averageTip: metricsPrimary.averageTip,
+      currencies: metricsSummary.currencies,
     },
     settingsSummary,
     scopes: {
