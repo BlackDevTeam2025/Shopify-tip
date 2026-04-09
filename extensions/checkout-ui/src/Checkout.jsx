@@ -619,21 +619,18 @@ function TipBlockExtension() {
   ]);
 
   return (
-    <s-grid
-      background="subdued"
-      border="base"
-      borderRadius="large"
-      padding="base"
-      gap="base"
-    >
-      <s-stack gap="small" inline-size="100%">
-        <s-text type="strong">{settings.heading}</s-text>
-        <s-text type="small" tone="subdued">
-          {visibleSupportMessage}
-        </s-text>
-      </s-stack>
+    <s-stack gap="small" inline-size="100%">
+      <s-heading>{settings.heading}</s-heading>
+      <s-text tone="subdued">{visibleSupportMessage}</s-text>
 
-      <s-grid gridTemplateColumns="1fr 1fr" gap="small">
+      <s-grid
+        background="subdued"
+        border="base"
+        borderRadius="large"
+        padding="base"
+        gap="base"
+      >
+        <s-grid gridTemplateColumns="1fr 1fr" gap="small">
         {choices.map((choice) => {
           const isSelected = selectedTip === choice.key;
 
@@ -671,79 +668,80 @@ function TipBlockExtension() {
             </s-press-button>
           );
         })}
+        </s-grid>
+
+        {isCustomSelected && settings.custom_amount_enabled && (
+          <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small">
+            <s-text-field
+              name="custom-amount"
+              value={customAmount}
+              onChange={(event) => {
+                setCustomAmount(event.currentTarget.value);
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+              label="Custom tip"
+              accessory={
+                <s-grid gridTemplateColumns="auto auto" gap="small">
+                  <s-button
+                    type="button"
+                    variant="secondary"
+                    accessibilityLabel="Decrease custom tip"
+                    disabled={isLoading}
+                    onClick={() => changeCustomAmount(-1)}
+                  >
+                    -
+                  </s-button>
+                  <s-button
+                    type="button"
+                    variant="secondary"
+                    accessibilityLabel="Increase custom tip"
+                    disabled={isLoading}
+                    onClick={() => changeCustomAmount(1)}
+                  >
+                    +
+                  </s-button>
+                </s-grid>
+              }
+            />
+
+            <s-button
+              variant="primary"
+              loading={isLoading}
+              disabled={disablePrimaryAction}
+              onClick={handlePrimaryAction}
+            >
+              {settings.cta_label || "Update tip"}
+            </s-button>
+          </s-grid>
+        )}
+
+        {hasAppliedTip ? (
+          <s-grid gridTemplateColumns="1fr auto" gap="extra-tight">
+            <s-text type="small" tone="subdued">
+              Tip
+            </s-text>
+            <s-text type="small">
+              {formatCurrency(displayedTipAmount, currencyCode)}
+            </s-text>
+          </s-grid>
+        ) : null}
+
+        <s-text type="small" tone="subdued">
+          {settings.thank_you_text}
+        </s-text>
+
+        {!settings.transform_active && (
+          <s-banner tone="warning">
+            Dynamic pricing is not ready for this store yet. Open the app
+            settings page once to let Shopify enable the Cart Transform, then
+            refresh checkout.
+          </s-banner>
+        )}
+
+        {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
+        {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
       </s-grid>
-
-      {isCustomSelected && settings.custom_amount_enabled && (
-        <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small">
-          <s-text-field
-            name="custom-amount"
-            value={customAmount}
-            onChange={(event) => {
-              setCustomAmount(event.currentTarget.value);
-              setErrorMessage(null);
-              setSuccessMessage(null);
-            }}
-            label="Custom tip"
-            accessory={
-              <s-grid gridTemplateColumns="auto auto" gap="small">
-                <s-button
-                  type="button"
-                  variant="secondary"
-                  accessibilityLabel="Decrease custom tip"
-                  disabled={isLoading}
-                  onClick={() => changeCustomAmount(-1)}
-                >
-                  -
-                </s-button>
-                <s-button
-                  type="button"
-                  variant="secondary"
-                  accessibilityLabel="Increase custom tip"
-                  disabled={isLoading}
-                  onClick={() => changeCustomAmount(1)}
-                >
-                  +
-                </s-button>
-              </s-grid>
-            }
-          />
-
-          <s-button
-            variant="primary"
-            loading={isLoading}
-            disabled={disablePrimaryAction}
-            onClick={handlePrimaryAction}
-          >
-            {settings.cta_label || "Update tip"}
-          </s-button>
-        </s-grid>
-      )}
-
-      {hasAppliedTip ? (
-        <s-grid gridTemplateColumns="1fr auto" gap="extra-tight">
-          <s-text type="small" tone="subdued">
-            Tip
-          </s-text>
-          <s-text type="small">
-            {formatCurrency(displayedTipAmount, currencyCode)}
-          </s-text>
-        </s-grid>
-      ) : null}
-
-      <s-text type="small" tone="subdued">
-        {settings.thank_you_text}
-      </s-text>
-
-      {!settings.transform_active && (
-        <s-banner tone="warning">
-          Dynamic pricing is not ready for this store yet. Open the app settings
-          page once to let Shopify enable the Cart Transform, then refresh
-          checkout.
-        </s-banner>
-      )}
-
-      {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
-      {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
-    </s-grid>
+    </s-stack>
   );
 }

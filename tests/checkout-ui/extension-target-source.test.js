@@ -8,10 +8,10 @@ const extensionConfig = fs.readFileSync(
   "utf8",
 );
 
-test("checkout extension target renders after reductions in the order summary", () => {
+test("checkout extension target renders after payment methods", () => {
   assert.equal(
     extensionConfig.includes(
-      'target = "purchase.checkout.reductions.render-after"',
+      'target = "purchase.checkout.payment-method-list.render-after"',
     ),
     true,
   );
