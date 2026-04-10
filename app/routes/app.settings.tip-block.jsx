@@ -41,6 +41,9 @@ const responsiveLayoutStyles = `
   }
 `;
 
+const SHOPIFY_FONT_FAMILY =
+  'var(--p-font-family-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)';
+
 const styles = {
   page: {
     display: "grid",
@@ -48,6 +51,7 @@ const styles = {
     maxWidth: "1460px",
     margin: "0 auto",
     width: "100%",
+    fontFamily: SHOPIFY_FONT_FAMILY,
   },
   layout: {
     display: "grid",
@@ -60,16 +64,16 @@ const styles = {
   },
   title: {
     margin: 0,
-    fontSize: "38px",
-    lineHeight: 1.08,
-    fontWeight: 800,
-    letterSpacing: "-0.04em",
+    fontSize: "26px",
+    lineHeight: 1.2,
+    fontWeight: 700,
+    letterSpacing: "normal",
     color: "#111827",
   },
   subtitle: {
     margin: 0,
-    fontSize: "16px",
-    lineHeight: 1.7,
+    fontSize: "14px",
+    lineHeight: 1.6,
     color: "#4b5563",
   },
   card: {
@@ -104,14 +108,14 @@ const styles = {
   },
   sectionTitle: {
     margin: 0,
-    fontSize: "16px",
+    fontSize: "15px",
     lineHeight: 1.3,
-    fontWeight: 800,
+    fontWeight: 700,
     color: "#111827",
   },
   sectionDescription: {
     margin: 0,
-    fontSize: "14px",
+    fontSize: "13px",
     lineHeight: 1.6,
     color: "#6b7280",
   },
@@ -143,8 +147,8 @@ const styles = {
     gap: "8px",
   },
   label: {
-    fontSize: "13px",
-    fontWeight: 700,
+    fontSize: "12px",
+    fontWeight: 600,
     color: "#111827",
   },
   inputWrap: {
@@ -162,7 +166,7 @@ const styles = {
     background: "transparent",
     color: "#111827",
     padding: "14px 16px",
-    fontSize: "15px",
+    fontSize: "14px",
     lineHeight: 1.4,
     boxSizing: "border-box",
     outline: "none",
@@ -174,14 +178,14 @@ const styles = {
     background: "#ffffff",
     color: "#111827",
     padding: "14px 16px",
-    fontSize: "15px",
+    fontSize: "14px",
     lineHeight: 1.4,
     boxSizing: "border-box",
     outline: "none",
   },
   suffix: {
     padding: "0 16px",
-    fontSize: "15px",
+    fontSize: "14px",
     color: "#4b5563",
     whiteSpace: "nowrap",
   },
@@ -224,15 +228,15 @@ const styles = {
   },
   previewTitle: {
     margin: 0,
-    fontSize: "15px",
-    fontWeight: 800,
+    fontSize: "14px",
+    fontWeight: 700,
     color: "#111827",
   },
   previewHeaderMeta: {
     margin: 0,
     fontSize: "12px",
     color: "#6b7280",
-    fontWeight: 600,
+    fontWeight: 500,
   },
   previewBody: {
     display: "grid",
@@ -249,16 +253,16 @@ const styles = {
   },
   previewHeading: {
     margin: 0,
-    fontSize: "20px",
-    lineHeight: 1.2,
-    letterSpacing: "-0.02em",
-    fontWeight: 800,
+    fontSize: "15px",
+    lineHeight: 1.4,
+    letterSpacing: "normal",
+    fontWeight: 600,
     color: "#111827",
   },
   previewSupportText: {
     margin: 0,
     fontSize: "13px",
-    lineHeight: 1.45,
+    lineHeight: 1.5,
     color: "#4b5563",
   },
   previewChoicesGrid: {
@@ -286,15 +290,15 @@ const styles = {
     background: "#eff6ff",
   },
   previewChoicePrimary: {
-    fontSize: "16px",
-    fontWeight: 700,
-    lineHeight: 1.15,
+    fontSize: "13px",
+    fontWeight: 600,
+    lineHeight: 1.2,
     margin: 0,
     color: "#111827",
   },
   previewChoiceSecondary: {
     fontSize: "11px",
-    lineHeight: 1.2,
+    lineHeight: 1.3,
     margin: 0,
     color: "#6b7280",
   },
@@ -310,7 +314,7 @@ const styles = {
     borderRadius: "12px",
     background: "#ffffff",
     color: "#111827",
-    fontSize: "13px",
+    fontSize: "14px",
     padding: "9px 12px",
     outline: "none",
     boxSizing: "border-box",
@@ -322,8 +326,8 @@ const styles = {
     background: "#2563eb",
     color: "#ffffff",
     padding: "9px 12px",
-    fontSize: "13px",
-    fontWeight: 700,
+    fontSize: "14px",
+    fontWeight: 600,
     cursor: "pointer",
   },
   previewSubmitButtonDisabled: {
@@ -340,25 +344,25 @@ const styles = {
   },
   previewTipLabel: {
     margin: 0,
-    fontSize: "13px",
+    fontSize: "11px",
     color: "#374151",
   },
   previewTipAmount: {
     margin: 0,
-    fontSize: "13px",
-    fontWeight: 700,
+    fontSize: "11px",
+    fontWeight: 600,
     color: "#111827",
   },
   previewThankYou: {
     margin: 0,
     fontSize: "11px",
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
+    letterSpacing: "normal",
+    textTransform: "none",
     color: "#4b5563",
   },
   previewNote: {
     margin: 0,
-    fontSize: "11px",
+    fontSize: "12px",
     lineHeight: 1.5,
     color: "#6b7280",
   },

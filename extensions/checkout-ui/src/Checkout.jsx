@@ -660,7 +660,7 @@ function TipBlockExtension() {
               }}
             >
               <s-stack gap="extra-tight" inline-size="100%">
-                <s-text type="strong">{choice.primaryLabel}</s-text>
+                <s-text>{choice.primaryLabel}</s-text>
                 <s-text type="small" tone="subdued">
                   {choice.secondaryLabel}
                 </s-text>

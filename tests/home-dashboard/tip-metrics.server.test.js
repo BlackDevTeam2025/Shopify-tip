@@ -185,4 +185,34 @@ test("summarizeTipMetrics groups totals by currency and computes averages", () =
     ordersWithTip: 2,
     averageTip: 20,
   });
+  assert.equal(summary.trendCurrency, "USD");
+  assert.equal(summary.trend.length, 60);
+});
+
+test("summarizeTipMetrics builds daily trend using primary currency only", () => {
+  const today = new Date();
+  const dayMinus2 = new Date(today);
+  dayMinus2.setUTCDate(today.getUTCDate() - 2);
+  const dayMinus1 = new Date(today);
+  dayMinus1.setUTCDate(today.getUTCDate() - 1);
+
+  const summary = summarizeTipMetrics(
+    [
+      { currency: "USD", netAmount: 10, paidAt: dayMinus2.toISOString() },
+      { currency: "USD", netAmount: 15, paidAt: dayMinus1.toISOString() },
+      { currency: "EUR", netAmount: 50, paidAt: dayMinus1.toISOString() },
+    ],
+    3,
+  );
+
+  const trendMap = new Map(
+    summary.trend.map((point) => [point.date, point.netAmount]),
+  );
+  const dayMinus2Key = dayMinus2.toISOString().slice(0, 10);
+  const dayMinus1Key = dayMinus1.toISOString().slice(0, 10);
+
+  assert.equal(summary.trendCurrency, "EUR");
+  assert.equal(summary.trend.length, 3);
+  assert.equal(trendMap.get(dayMinus2Key), 0);
+  assert.equal(trendMap.get(dayMinus1Key), 50);
 });

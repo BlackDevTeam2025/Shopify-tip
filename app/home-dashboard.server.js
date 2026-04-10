@@ -88,6 +88,8 @@ export async function loadHomeDashboardData({
       ordersWithTip: metricsPrimary.ordersWithTip,
       averageTip: metricsPrimary.averageTip,
       currencies: metricsSummary.currencies,
+      trendCurrency: metricsSummary.trendCurrency,
+      trend: metricsSummary.trend,
     },
   };
 }

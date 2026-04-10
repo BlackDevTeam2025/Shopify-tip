@@ -26,6 +26,70 @@ function parseDate(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function toUtcDayKey(dateValue) {
+  const date = parseDate(dateValue);
+
+  if (!date) {
+    return "";
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function buildWindowDayKeys(windowDays = TIP_METRICS_WINDOW_DAYS) {
+  const safeWindowDays = Math.max(Number(windowDays) || 1, 1);
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const dayKeys = [];
+
+  for (let offset = safeWindowDays - 1; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() - offset);
+    dayKeys.push(date.toISOString().slice(0, 10));
+  }
+
+  return dayKeys;
+}
+
+function summarizePrimaryCurrencyTrend({
+  rows = [],
+  windowDays = TIP_METRICS_WINDOW_DAYS,
+  primaryCurrency = null,
+}) {
+  const dayKeys = buildWindowDayKeys(windowDays);
+  const dayTotals = new Map(dayKeys.map((dayKey) => [dayKey, 0]));
+
+  if (!primaryCurrency) {
+    return dayKeys.map((dayKey) => ({
+      date: dayKey,
+      netAmount: 0,
+    }));
+  }
+
+  for (const row of rows) {
+    if ((row.currency || "USD") !== primaryCurrency) {
+      continue;
+    }
+
+    const dayKey = toUtcDayKey(row.paidAt);
+
+    if (!dayTotals.has(dayKey)) {
+      continue;
+    }
+
+    const currentTotal = dayTotals.get(dayKey) ?? 0;
+    dayTotals.set(
+      dayKey,
+      currentTotal + parseNonNegativeNumber(row.netAmount),
+    );
+  }
+
+  return dayKeys.map((dayKey) => ({
+    date: dayKey,
+    netAmount: Number((dayTotals.get(dayKey) ?? 0).toFixed(2)),
+  }));
+}
+
 function getOrderId(payload = {}) {
   const orderId = parseInteger(payload.order_id);
   if (orderId) {
@@ -361,12 +425,20 @@ export function summarizeTipMetrics(rows = [], windowDays = TIP_METRICS_WINDOW_D
           : 0,
     }))
     .sort((left, right) => right.totalNet - left.totalNet);
+  const primaryCurrency = currencies[0]?.currency ?? null;
+  const trend = summarizePrimaryCurrencyTrend({
+    rows,
+    windowDays,
+    primaryCurrency,
+  });
 
   return {
     windowDays,
     currencies,
     primary: currencies[0] ?? null,
     hasData: currencies.length > 0,
+    trendCurrency: primaryCurrency,
+    trend,
   };
 }
 
@@ -390,6 +462,7 @@ export async function loadTipMetricsSummary({
     select: {
       currency: true,
       netAmount: true,
+      paidAt: true,
     },
   });
 

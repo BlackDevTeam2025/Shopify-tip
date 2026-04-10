@@ -69,8 +69,9 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
     metricsDbClient: {
       tipMetric: {
         findMany: async () => [
-          { currency: "USD", netAmount: 12.5 },
-          { currency: "USD", netAmount: 7.5 },
+          { currency: "USD", netAmount: 12.5, paidAt: "2026-04-09T10:00:00Z" },
+          { currency: "USD", netAmount: 7.5, paidAt: "2026-04-10T10:00:00Z" },
+          { currency: "EUR", netAmount: 5, paidAt: "2026-04-10T11:00:00Z" },
         ],
       },
     },
@@ -85,6 +86,13 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
   assert.equal(dashboard.tipMetrics.totalNet, 20);
   assert.equal(dashboard.tipMetrics.ordersWithTip, 2);
   assert.equal(dashboard.tipMetrics.averageTip, 10);
+  assert.equal(dashboard.tipMetrics.trendCurrency, "USD");
+  assert.equal(Array.isArray(dashboard.tipMetrics.trend), true);
+  assert.equal(dashboard.tipMetrics.trend.length, 60);
+  assert.equal(
+    dashboard.tipMetrics.trend.some((point) => point.netAmount > 0),
+    true,
+  );
 });
 
 test("loadHomeDashboardData surfaces blocked store state and missing scopes without crashing", async () => {
@@ -154,4 +162,10 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
   assert.equal(dashboard.license.title, "Not active");
   assert.equal(dashboard.tipMetrics.hasData, false);
   assert.equal(dashboard.tipMetrics.totalNet, 0);
+  assert.equal(dashboard.tipMetrics.trendCurrency, null);
+  assert.equal(dashboard.tipMetrics.trend.length, 60);
+  assert.equal(
+    dashboard.tipMetrics.trend.every((point) => point.netAmount === 0),
+    true,
+  );
 });

@@ -21,6 +21,7 @@ test("home route renders only data-first KPI sections", () => {
   assert.equal(routeSource.includes("Home"), true);
   assert.equal(routeSource.includes("License status"), true);
   assert.equal(routeSource.includes("Total tips (net, 60 days)"), true);
+  assert.equal(routeSource.includes("Tip trend (60 days)"), true);
 });
 
 test("home route removes operational snapshot cards and config summaries", () => {
