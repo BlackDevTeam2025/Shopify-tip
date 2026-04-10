@@ -5,14 +5,54 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { isLicenseActive } from "../billing/license.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
+import {
+  PREVIEW_SUBTOTAL,
+  buildPreviewPresets,
+  calculatePreviewTipAmount,
+  formatPreviewCurrency,
+  getPreviewSupportMessage,
+  isPreviewCustomAmountValid,
+  parsePreviewCustomAmount,
+  resolvePreviewDefaultSelection,
+} from "../tip-preview.utils.js";
+
+const responsiveLayoutStyles = `
+  .tip-settings-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .tip-settings-preview-column {
+    position: sticky;
+    top: 24px;
+  }
+
+  @media (max-width: 1200px) {
+    .tip-settings-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .tip-settings-preview-column {
+      position: static;
+      top: auto;
+    }
+  }
+`;
 
 const styles = {
   page: {
     display: "grid",
     gap: "24px",
-    maxWidth: "1180px",
+    maxWidth: "1460px",
     margin: "0 auto",
     width: "100%",
+  },
+  layout: {
+    display: "grid",
+    gap: "24px",
+    alignItems: "start",
   },
   hero: {
     display: "grid",
@@ -166,6 +206,162 @@ const styles = {
     gap: "12px",
     alignItems: "center",
   },
+  previewCard: {
+    border: "1px solid #e5e7eb",
+    borderRadius: "24px",
+    background: "#ffffff",
+    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.06)",
+    overflow: "hidden",
+  },
+  previewHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "18px 20px",
+    borderBottom: "1px solid #eef2f7",
+    background: "#fafbfc",
+  },
+  previewTitle: {
+    margin: 0,
+    fontSize: "15px",
+    fontWeight: 800,
+    color: "#111827",
+  },
+  previewHeaderMeta: {
+    margin: 0,
+    fontSize: "12px",
+    color: "#6b7280",
+    fontWeight: 600,
+  },
+  previewBody: {
+    display: "grid",
+    gap: "14px",
+    padding: "20px",
+  },
+  previewTipBlock: {
+    display: "grid",
+    gap: "12px",
+    border: "1px solid #dbe1ea",
+    borderRadius: "18px",
+    background: "#f8fafc",
+    padding: "14px",
+  },
+  previewHeading: {
+    margin: 0,
+    fontSize: "28px",
+    lineHeight: 1.12,
+    letterSpacing: "-0.02em",
+    fontWeight: 800,
+    color: "#111827",
+  },
+  previewSupportText: {
+    margin: 0,
+    fontSize: "14px",
+    lineHeight: 1.5,
+    color: "#4b5563",
+  },
+  previewChoicesGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  previewChoiceButton: {
+    appearance: "none",
+    borderRadius: "12px",
+    border: "1px solid #d1d5db",
+    background: "#ffffff",
+    color: "#111827",
+    cursor: "pointer",
+    padding: "10px 8px",
+    minHeight: "68px",
+    display: "grid",
+    placeItems: "center",
+    gap: "2px",
+    transition: "all 0.15s ease",
+  },
+  previewChoiceButtonActive: {
+    borderColor: "#2563eb",
+    boxShadow: "0 0 0 1px #2563eb inset",
+    background: "#eff6ff",
+  },
+  previewChoicePrimary: {
+    fontSize: "26px",
+    fontWeight: 700,
+    lineHeight: 1.1,
+    margin: 0,
+    color: "#111827",
+  },
+  previewChoiceSecondary: {
+    fontSize: "20px",
+    lineHeight: 1.1,
+    margin: 0,
+    color: "#6b7280",
+  },
+  previewCustomRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) auto",
+    gap: "10px",
+    alignItems: "center",
+  },
+  previewCustomInput: {
+    width: "100%",
+    border: "1px solid #d1d5db",
+    borderRadius: "12px",
+    background: "#ffffff",
+    color: "#111827",
+    fontSize: "14px",
+    padding: "10px 12px",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  previewSubmitButton: {
+    appearance: "none",
+    borderRadius: "12px",
+    border: "1px solid #1d4ed8",
+    background: "#2563eb",
+    color: "#ffffff",
+    padding: "10px 14px",
+    fontSize: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  previewSubmitButtonDisabled: {
+    borderColor: "#d1d5db",
+    background: "#f3f4f6",
+    color: "#9ca3af",
+    cursor: "not-allowed",
+  },
+  previewTipRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+  previewTipLabel: {
+    margin: 0,
+    fontSize: "14px",
+    color: "#374151",
+  },
+  previewTipAmount: {
+    margin: 0,
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#111827",
+  },
+  previewThankYou: {
+    margin: 0,
+    fontSize: "12px",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "#4b5563",
+  },
+  previewNote: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: 1.5,
+    color: "#6b7280",
+  },
 };
 
 function cloneConfig(config) {
@@ -273,10 +469,50 @@ export default function TipBlockSettings() {
     () => splitPresetValues(draftConfig.tip_percentages),
     [draftConfig.tip_percentages],
   );
+  const previewPresets = useMemo(
+    () => buildPreviewPresets(presetValues),
+    [presetValues],
+  );
+  const previewSupportMessage = useMemo(
+    () => getPreviewSupportMessage(draftConfig),
+    [draftConfig],
+  );
+  const [previewSelectedTip, setPreviewSelectedTip] = useState(() =>
+    resolvePreviewDefaultSelection(draftConfig.default_tip_choice, previewPresets),
+  );
+  const [previewCustomAmount, setPreviewCustomAmount] = useState("");
+  const [previewAppliedTipAmount, setPreviewAppliedTipAmount] = useState(() =>
+    calculatePreviewTipAmount({
+      selection: resolvePreviewDefaultSelection(
+        draftConfig.default_tip_choice,
+        previewPresets,
+      ),
+      customAmount: "",
+      presets: previewPresets,
+      subtotal: PREVIEW_SUBTOTAL,
+    }),
+  );
 
   useEffect(() => {
     setDraftConfig(cloneConfig(currentConfig));
   }, [currentConfig]);
+
+  useEffect(() => {
+    const defaultSelection = resolvePreviewDefaultSelection(
+      draftConfig.default_tip_choice,
+      previewPresets,
+    );
+    const defaultAppliedAmount = calculatePreviewTipAmount({
+      selection: defaultSelection,
+      customAmount: "",
+      presets: previewPresets,
+      subtotal: PREVIEW_SUBTOTAL,
+    });
+
+    setPreviewSelectedTip(defaultSelection);
+    setPreviewCustomAmount("");
+    setPreviewAppliedTipAmount(defaultAppliedAmount);
+  }, [draftConfig.default_tip_choice, previewPresets]);
 
   const updateDraft = (field, value) => {
     setDraftConfig((previous) => ({
@@ -296,9 +532,46 @@ export default function TipBlockSettings() {
       [nextValues.preset_1, nextValues.preset_2, nextValues.preset_3].join(","),
     );
   };
+  const previewCustomSelected = previewSelectedTip === "custom";
+  const previewCanSubmitCustom =
+    previewCustomSelected && isPreviewCustomAmountValid(previewCustomAmount);
+
+  const handlePreviewChooseTip = (selection) => {
+    setPreviewSelectedTip(selection);
+
+    if (selection === "custom") {
+      return;
+    }
+
+    setPreviewCustomAmount("");
+    setPreviewAppliedTipAmount(
+      calculatePreviewTipAmount({
+        selection,
+        customAmount: "",
+        presets: previewPresets,
+        subtotal: PREVIEW_SUBTOTAL,
+      }),
+    );
+  };
+
+  const handlePreviewApplyCustom = () => {
+    if (!previewCanSubmitCustom) {
+      return;
+    }
+
+    setPreviewAppliedTipAmount(
+      calculatePreviewTipAmount({
+        selection: "custom",
+        customAmount: previewCustomAmount,
+        presets: previewPresets,
+        subtotal: PREVIEW_SUBTOTAL,
+      }),
+    );
+  };
   return (
     <s-page title="Tip Settings">
       <div style={styles.page}>
+        <style>{responsiveLayoutStyles}</style>
         <div style={styles.hero}>
           <h1 style={styles.title}>Tipping</h1>
           <p style={styles.subtitle}>
@@ -306,19 +579,20 @@ export default function TipBlockSettings() {
           </p>
         </div>
 
-        <fetcher.Form method="POST" style={styles.card}>
-          {transformStatus?.errors?.length > 0 ? (
-            <div style={styles.cardHeader}>
-              <s-banner tone="warning">
-                {transformStatus.errors
-                  .map((error) => error.message)
-                  .join(", ")}
-              </s-banner>
-            </div>
-          ) : null}
+        <div className="tip-settings-layout" style={styles.layout}>
+          <fetcher.Form method="POST" style={styles.card}>
+            {transformStatus?.errors?.length > 0 ? (
+              <div style={styles.cardHeader}>
+                <s-banner tone="warning">
+                  {transformStatus.errors
+                    .map((error) => error.message)
+                    .join(", ")}
+                </s-banner>
+              </div>
+            ) : null}
 
-          <div style={styles.body}>
-            <input type="hidden" name="custom_amount_enabled" value="on" />
+            <div style={styles.body}>
+              <input type="hidden" name="custom_amount_enabled" value="on" />
 
             <div style={styles.sectionCard}>
               <div style={styles.sectionHeader}>
@@ -547,34 +821,148 @@ export default function TipBlockSettings() {
                 </select>
               </div>
             </div>
-          </div>
+            </div>
 
-          <div style={styles.actionBar}>
-            <div style={styles.actionMeta}>
-              {saved ? (
-                <s-banner tone="success">Settings saved successfully.</s-banner>
-              ) : null}
-              {errors && errors.length > 0 ? (
-                <s-banner tone="critical">
-                  {errors.map((error) => error.message).join(", ")}
-                </s-banner>
-              ) : null}
+            <div style={styles.actionBar}>
+              <div style={styles.actionMeta}>
+                {saved ? (
+                  <s-banner tone="success">
+                    Settings saved successfully.
+                  </s-banner>
+                ) : null}
+                {errors && errors.length > 0 ? (
+                  <s-banner tone="critical">
+                    {errors.map((error) => error.message).join(", ")}
+                  </s-banner>
+                ) : null}
+              </div>
+              <div style={styles.actionButtons}>
+                <s-button
+                  type="button"
+                  variant="secondary"
+                  disabled={!isDirty || isLoading}
+                  onClick={() => setDraftConfig(cloneConfig(currentConfig))}
+                >
+                  Discard
+                </s-button>
+                <s-button type="submit" loading={isLoading} variant="primary">
+                  {isLoading ? "Saving..." : "Save settings"}
+                </s-button>
+              </div>
             </div>
-            <div style={styles.actionButtons}>
-              <s-button
-                type="button"
-                variant="secondary"
-                disabled={!isDirty || isLoading}
-                onClick={() => setDraftConfig(cloneConfig(currentConfig))}
-              >
-                Discard
-              </s-button>
-              <s-button type="submit" loading={isLoading} variant="primary">
-                {isLoading ? "Saving..." : "Save settings"}
-              </s-button>
+          </fetcher.Form>
+
+          <aside className="tip-settings-preview-column" style={styles.previewCard}>
+            <div style={styles.previewHeader}>
+              <h2 style={styles.previewTitle}>Live preview</h2>
+              <p style={styles.previewHeaderMeta}>Subtotal ${PREVIEW_SUBTOTAL}</p>
             </div>
-          </div>
-        </fetcher.Form>
+
+            <div style={styles.previewBody}>
+              <div style={styles.previewTipBlock}>
+                <p style={styles.previewHeading}>
+                  {draftConfig.heading || "Tip"}
+                </p>
+                <p style={styles.previewSupportText}>{previewSupportMessage}</p>
+
+                <div style={styles.previewChoicesGrid}>
+                  {previewPresets.map((preset) => {
+                    const selected = previewSelectedTip === preset.key;
+                    const tipAmount = calculatePreviewTipAmount({
+                      selection: preset.key,
+                      customAmount: "",
+                      presets: previewPresets,
+                      subtotal: PREVIEW_SUBTOTAL,
+                    });
+
+                    return (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        style={
+                          selected
+                            ? {
+                                ...styles.previewChoiceButton,
+                                ...styles.previewChoiceButtonActive,
+                              }
+                            : styles.previewChoiceButton
+                        }
+                        onClick={() => handlePreviewChooseTip(preset.key)}
+                      >
+                        <p style={styles.previewChoicePrimary}>{preset.label}%</p>
+                        <p style={styles.previewChoiceSecondary}>
+                          {formatPreviewCurrency(tipAmount)}
+                        </p>
+                      </button>
+                    );
+                  })}
+
+                  {draftConfig.custom_amount_enabled ? (
+                    <button
+                      type="button"
+                      style={
+                        previewCustomSelected
+                          ? {
+                              ...styles.previewChoiceButton,
+                              ...styles.previewChoiceButtonActive,
+                            }
+                          : styles.previewChoiceButton
+                      }
+                      onClick={() => handlePreviewChooseTip("custom")}
+                    >
+                      <p style={styles.previewChoicePrimary}>Custom</p>
+                      <p style={styles.previewChoiceSecondary}>Choose amount</p>
+                    </button>
+                  ) : null}
+                </div>
+
+                {previewCustomSelected && draftConfig.custom_amount_enabled ? (
+                  <div style={styles.previewCustomRow}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={previewCustomAmount}
+                      onChange={(event) => setPreviewCustomAmount(event.target.value)}
+                      placeholder="Custom tip"
+                      style={styles.previewCustomInput}
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePreviewApplyCustom}
+                      style={
+                        previewCanSubmitCustom
+                          ? styles.previewSubmitButton
+                          : {
+                              ...styles.previewSubmitButton,
+                              ...styles.previewSubmitButtonDisabled,
+                            }
+                      }
+                      disabled={!previewCanSubmitCustom}
+                    >
+                      {draftConfig.cta_label || "Update tip"}
+                    </button>
+                  </div>
+                ) : null}
+
+                <div style={styles.previewTipRow}>
+                  <p style={styles.previewTipLabel}>Tip</p>
+                  <p style={styles.previewTipAmount}>
+                    {formatPreviewCurrency(previewAppliedTipAmount)}
+                  </p>
+                </div>
+
+                <p style={styles.previewThankYou}>
+                  {draftConfig.thank_you_text || "THANK YOU, WE APPRECIATE IT."}
+                </p>
+              </div>
+
+              <p style={styles.previewNote}>
+                Interactive simulation only. This preview follows current draft
+                values and does not write to checkout.
+              </p>
+            </div>
+          </aside>
+        </div>
       </div>
     </s-page>
   );

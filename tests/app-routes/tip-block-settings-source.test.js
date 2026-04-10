@@ -19,7 +19,9 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="tip_percentages"'), false);
   assert.equal(routeSource.includes("Checkout copy"), false);
   assert.equal(routeSource.includes("Checkout Preview"), false);
-  assert.equal(routeSource.includes("previewWrap"), false);
+  assert.equal(routeSource.includes("Live preview"), true);
+  assert.equal(routeSource.includes("tip-settings-layout"), true);
+  assert.equal(routeSource.includes("tip-settings-preview-column"), true);
   assert.equal(routeSource.includes('name="heading"'), true);
   assert.equal(routeSource.includes('name="support_text"'), false);
   assert.equal(routeSource.includes('name="support_text_1"'), true);
@@ -48,4 +50,6 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("Tip setup ready"), false);
   assert.equal(routeSource.includes("Tip setup needs attention"), false);
   assert.equal(routeSource.includes("Default selected preset"), true);
+  assert.equal(routeSource.includes("Interactive simulation only"), true);
+  assert.equal(routeSource.includes("PREVIEW_SUBTOTAL"), true);
 });
