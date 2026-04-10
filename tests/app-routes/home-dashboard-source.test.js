@@ -17,19 +17,19 @@ test("home route removes the Shopify template demo content", () => {
   assert.equal(routeSource.includes("The dashboard tracks app readiness"), false);
 });
 
-test("home route renders the operational dashboard sections", () => {
+test("home route renders only data-first KPI sections", () => {
   assert.equal(routeSource.includes("Home"), true);
-  assert.equal(routeSource.includes("Store status"), true);
   assert.equal(routeSource.includes("License status"), true);
-  assert.equal(routeSource.includes("Checkout runtime"), true);
-  assert.equal(routeSource.includes("Current tip settings"), true);
-  assert.equal(routeSource.includes("Tip metrics"), true);
-  assert.equal(routeSource.includes("Total tips (net"), true);
-  assert.equal(routeSource.includes("Open Tip Settings"), true);
+  assert.equal(routeSource.includes("Total tips (net, 60 days)"), true);
 });
 
-test("home route keeps the simplified operational content and avoids fake dashboard chrome", () => {
+test("home route removes operational snapshot cards and config summaries", () => {
   assert.equal(routeSource.includes("Search data..."), false);
+  assert.equal(routeSource.includes("Store status"), false);
+  assert.equal(routeSource.includes("Checkout runtime"), false);
+  assert.equal(routeSource.includes("Tip setup"), false);
+  assert.equal(routeSource.includes("Current tip settings"), false);
+  assert.equal(routeSource.includes("Open Tip Settings"), false);
   assert.equal(routeSource.includes("Permissions granted by Shopify"), false);
   assert.equal(routeSource.includes("App access scopes"), false);
   assert.equal(routeSource.includes("Analytics"), false);

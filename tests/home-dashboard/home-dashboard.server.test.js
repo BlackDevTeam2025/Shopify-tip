@@ -42,67 +42,11 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
       };
     }
 
-    if (query.includes("query ValidateTipMerchandise")) {
-      return {
-        data: {
-          nodes: [
-            {
-              __typename: "Product",
-              id: "gid://shopify/Product/1",
-              variants: {
-                edges: [
-                  {
-                    node: {
-                      id: "gid://shopify/ProductVariant/1",
-                    },
-                  },
-                ],
-              },
-            },
-            {
-              __typename: "ProductVariant",
-              id: "gid://shopify/ProductVariant/1",
-              product: {
-                id: "gid://shopify/Product/1",
-              },
-            },
-          ],
-        },
-      };
-    }
-
-    if (query.includes("query GetPublications")) {
-      return {
-        data: {
-          publications: {
-            edges: [
-              {
-                node: {
-                  id: "gid://shopify/Publication/1",
-                  name: "Online Store",
-                },
-              },
-            ],
-          },
-        },
-      };
-    }
-
-    if (query.includes("query HomeDashboardMeta")) {
+    if (query.includes("query HomeDashboardHeader")) {
       return {
         data: {
           shop: {
             name: "Saovang",
-          },
-          currentAppInstallation: {
-            accessScopes: [
-              { handle: "write_cart_transforms" },
-              { handle: "write_products" },
-              { handle: "write_publications" },
-              { handle: "read_publications" },
-              { handle: "write_metaobjects" },
-              { handle: "write_metaobject_definitions" },
-            ],
           },
         },
       };
@@ -122,7 +66,6 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
       isDevStore: false,
       publicDisplayName: "Shopify Plus",
     },
-    sessionScope: "write_cart_transforms,write_products",
     metricsDbClient: {
       tipMetric: {
         findMany: async () => [
@@ -135,13 +78,9 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
 
   assert.equal(dashboard.header.storeName, "Saovang");
   assert.equal(dashboard.header.readinessLabel, "Home - Ready");
-  assert.equal(dashboard.store.status, "ready");
   assert.equal(dashboard.license.status, "ready");
-  assert.equal(dashboard.checkoutRuntime.status, "ready");
-  assert.equal(dashboard.tipInfrastructure.status, "ready");
-  assert.equal(dashboard.scopes.status, "ready");
-  assert.deepEqual(dashboard.settingsSummary.presets, ["10", "15", "20"]);
-  assert.equal(dashboard.settingsSummary.defaultTipChoice, "preset_2");
+  assert.equal(dashboard.license.title, "Active");
+  assert.equal(dashboard.tipMetrics.title, "Total tips (net, 60 days)");
   assert.equal(dashboard.tipMetrics.currency, "USD");
   assert.equal(dashboard.tipMetrics.totalNet, 20);
   assert.equal(dashboard.tipMetrics.ordersWithTip, 2);
@@ -149,7 +88,7 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
 });
 
 test("loadHomeDashboardData surfaces blocked store state and missing scopes without crashing", async () => {
-  const admin = createAdmin((query, options) => {
+  const admin = createAdmin((query) => {
     if (query.includes("query GetTipBlockConfig")) {
       return {
         data: {
@@ -179,35 +118,11 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
       };
     }
 
-    if (query.includes("query FindAppManagedTipProduct")) {
-      assert.equal(options?.variables?.query, "tag:app_tip_internal");
-      return {
-        data: {
-          products: {
-            edges: [],
-          },
-        },
-      };
-    }
-
-    if (query.includes("query GetPublications")) {
-      return {
-        data: {
-          publications: {
-            edges: [],
-          },
-        },
-      };
-    }
-
-    if (query.includes("query HomeDashboardMeta")) {
+    if (query.includes("query HomeDashboardHeader")) {
       return {
         data: {
           shop: {
             name: "Blocked store",
-          },
-          currentAppInstallation: {
-            accessScopes: [{ handle: "write_products" }],
           },
         },
       };
@@ -227,7 +142,6 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
       isDevStore: false,
       publicDisplayName: "Grow",
     },
-    sessionScope: "",
     metricsDbClient: {
       tipMetric: {
         findMany: async () => [],
@@ -236,21 +150,8 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
   });
 
   assert.equal(dashboard.header.readinessLabel, "Home - Attention");
-  assert.equal(dashboard.store.status, "blocked");
   assert.equal(dashboard.license.status, "blocked");
-  assert.equal(dashboard.checkoutRuntime.status, "warning");
-  assert.equal(dashboard.tipInfrastructure.status, "warning");
-  assert.equal(dashboard.scopes.status, "warning");
-  assert.equal(
-    dashboard.tipInfrastructure.message,
-    "Could not find the Online Store publication required for tip checkout.",
-  );
-  assert.equal(
-    dashboard.scopes.items.some(
-      (scope) => scope.handle === "write_cart_transforms" && scope.granted === false,
-    ),
-    true,
-  );
+  assert.equal(dashboard.license.title, "Not active");
   assert.equal(dashboard.tipMetrics.hasData, false);
   assert.equal(dashboard.tipMetrics.totalNet, 0);
 });
