@@ -20,7 +20,13 @@ test("home route removes the Shopify template demo content", () => {
 test("home route renders only data-first KPI sections", () => {
   assert.equal(routeSource.includes("Home"), true);
   assert.equal(routeSource.includes("License status"), true);
-  assert.equal(routeSource.includes("Total tips (net, 60 days)"), true);
+  assert.equal(routeSource.includes("Total tips (net)"), true);
+  assert.equal(routeSource.includes("Tip trend"), true);
+  assert.equal(routeSource.includes("Selected range total"), true);
+  assert.equal(routeSource.includes("Contributing orders"), true);
+  assert.equal(routeSource.includes("rangeOptions.map"), true);
+  assert.equal(routeSource.includes("selectedWindowDays"), true);
+  assert.equal(routeSource.includes("buildRangeHref"), true);
 });
 
 test("home route removes operational snapshot cards and config summaries", () => {

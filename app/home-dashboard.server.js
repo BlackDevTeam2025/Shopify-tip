@@ -1,7 +1,11 @@
 import { isLicenseActive } from "./billing/license.server.js";
 import { getTipRuntimeEnabled } from "./billing/access-policy.server.js";
 import { loadTipConfig } from "./tip-config.server.js";
-import { loadTipMetricsSummary } from "./tip-metrics.server.js";
+import {
+  TIP_METRICS_RANGE_OPTIONS,
+  loadTipMetricsSummary,
+  normalizeTipMetricsWindowDays,
+} from "./tip-metrics.server.js";
 
 async function executeAdminJson(admin, query, variables) {
   const response = await admin.graphql(query, variables ? { variables } : {});
@@ -14,6 +18,7 @@ export async function loadHomeDashboardData({
   licenseState,
   shopEligibility,
   metricsDbClient,
+  selectedWindowDays,
 }) {
   const licenseActive = isLicenseActive(licenseState);
   const runtimeEnabled = getTipRuntimeEnabled({
@@ -23,6 +28,10 @@ export async function loadHomeDashboardData({
   const config = await loadTipConfig(admin, {
     enabled: runtimeEnabled,
   });
+  const metricsWindowDays = normalizeTipMetricsWindowDays(
+    selectedWindowDays,
+    config.tip_metrics_window_days,
+  );
   const json = await executeAdminJson(
     admin,
     `#graphql
@@ -36,14 +45,16 @@ export async function loadHomeDashboardData({
   const metricsSummary = config.tip_metrics_enabled
     ? await loadTipMetricsSummary({
         shop,
-        windowDays: config.tip_metrics_window_days,
+        windowDays: metricsWindowDays,
         dbClient: metricsDbClient,
       })
     : {
-        windowDays: config.tip_metrics_window_days,
+        windowDays: metricsWindowDays,
         currencies: [],
         primary: null,
         hasData: false,
+        trend: [],
+        trendCurrency: "USD",
       };
   const metricsPrimary = metricsSummary.primary ?? {
     currency: "USD",
@@ -82,7 +93,17 @@ export async function loadHomeDashboardData({
           : `No tip orders found in the last ${metricsSummary.windowDays} days yet.`
         : "Tip metrics are disabled in settings.",
       windowDays: metricsSummary.windowDays,
+      selectedWindowDays: metricsSummary.windowDays,
       hasData: metricsSummary.hasData,
+      rangeOptions: TIP_METRICS_RANGE_OPTIONS,
+      trendCurrency: metricsSummary.trendCurrency,
+      trend: metricsSummary.trend,
+      summary: {
+        currency: metricsPrimary.currency,
+        totalNet: metricsPrimary.totalNet,
+        ordersWithTip: metricsPrimary.ordersWithTip,
+        averageTip: metricsPrimary.averageTip,
+      },
       currency: metricsPrimary.currency,
       totalNet: metricsPrimary.totalNet,
       ordersWithTip: metricsPrimary.ordersWithTip,

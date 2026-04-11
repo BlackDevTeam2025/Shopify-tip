@@ -1,6 +1,7 @@
 import db from "./db.server.js";
 
 export const TIP_METRICS_WINDOW_DAYS = 60;
+export const TIP_METRICS_RANGE_OPTIONS = [7, 30, 60, 90];
 
 function parsePositiveNumber(value) {
   const parsed = Number.parseFloat(String(value ?? "").trim());
@@ -24,6 +25,35 @@ function parseDate(value) {
 
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function roundCurrencyAmount(value) {
+  return Number(parseNonNegativeNumber(value).toFixed(2));
+}
+
+function getWindowStart(windowDays, now = new Date()) {
+  const currentDate = parseDate(now) ?? new Date();
+  const start = new Date(
+    Date.UTC(
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth(),
+      currentDate.getUTCDate(),
+    ),
+  );
+  start.setUTCDate(start.getUTCDate() - Math.max(windowDays - 1, 0));
+  return start;
+}
+
+function formatTrendDateKey(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function normalizeTipMetricsWindowDays(
+  value,
+  fallback = TIP_METRICS_WINDOW_DAYS,
+) {
+  const parsed = parseInteger(value);
+  return TIP_METRICS_RANGE_OPTIONS.includes(parsed) ? parsed : fallback;
 }
 
 function getOrderId(payload = {}) {
@@ -370,16 +400,69 @@ export function summarizeTipMetrics(rows = [], windowDays = TIP_METRICS_WINDOW_D
   };
 }
 
+export function buildTipMetricsTrend({
+  rows = [],
+  windowDays = TIP_METRICS_WINDOW_DAYS,
+  currency = "USD",
+  now = new Date(),
+}) {
+  const safeWindowDays = normalizeTipMetricsWindowDays(windowDays);
+  const windowStart = getWindowStart(safeWindowDays, now);
+  const totalsByDate = new Map();
+
+  for (const row of rows) {
+    if ((row.currency || "USD") !== currency) {
+      continue;
+    }
+
+    const paidAt = parseDate(row.paidAt);
+    if (!paidAt || paidAt < windowStart) {
+      continue;
+    }
+
+    const dateKey = formatTrendDateKey(paidAt);
+    const currentTotal = totalsByDate.get(dateKey) ?? 0;
+    totalsByDate.set(
+      dateKey,
+      roundCurrencyAmount(currentTotal + parseNonNegativeNumber(row.netAmount)),
+    );
+  }
+
+  const points = [];
+  for (let dayIndex = 0; dayIndex < safeWindowDays; dayIndex += 1) {
+    const date = new Date(windowStart);
+    date.setUTCDate(windowStart.getUTCDate() + dayIndex);
+
+    const dateKey = formatTrendDateKey(date);
+    points.push({
+      date: dateKey,
+      netAmount: totalsByDate.get(dateKey) ?? 0,
+    });
+  }
+
+  return points;
+}
+
 export async function loadTipMetricsSummary({
   shop,
   windowDays = TIP_METRICS_WINDOW_DAYS,
   dbClient = db,
+  now = new Date(),
 }) {
+  const safeWindowDays = normalizeTipMetricsWindowDays(windowDays);
+
   if (!shop) {
-    return summarizeTipMetrics([], windowDays);
+    return {
+      ...summarizeTipMetrics([], safeWindowDays),
+      trend: buildTipMetricsTrend({
+        rows: [],
+        windowDays: safeWindowDays,
+      }),
+      trendCurrency: "USD",
+    };
   }
 
-  const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+  const since = getWindowStart(safeWindowDays, now);
   const rows = await dbClient.tipMetric.findMany({
     where: {
       shop,
@@ -390,8 +473,21 @@ export async function loadTipMetricsSummary({
     select: {
       currency: true,
       netAmount: true,
+      paidAt: true,
     },
   });
 
-  return summarizeTipMetrics(rows, windowDays);
+  const summary = summarizeTipMetrics(rows, safeWindowDays);
+  const trendCurrency = summary.primary?.currency ?? "USD";
+
+  return {
+    ...summary,
+    trend: buildTipMetricsTrend({
+      rows,
+      windowDays: safeWindowDays,
+      currency: trendCurrency,
+      now,
+    }),
+    trendCurrency,
+  };
 }

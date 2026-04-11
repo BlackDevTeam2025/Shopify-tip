@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 
 import {
   applyRefundTipMetric,
+  buildTipMetricsTrend,
+  loadTipMetricsSummary,
+  normalizeTipMetricsWindowDays,
   summarizeTipMetrics,
   upsertPaidTipMetric,
 } from "../../app/tip-metrics.server.js";
@@ -43,6 +46,7 @@ function createMockMetricsDb(initialRows = []) {
         return Array.from(metricRows.values()).map((row) => ({
           currency: row.currency,
           netAmount: row.netAmount,
+          paidAt: row.paidAt,
         }));
       },
     },
@@ -184,5 +188,114 @@ test("summarizeTipMetrics groups totals by currency and computes averages", () =
     totalNet: 40,
     ordersWithTip: 2,
     averageTip: 20,
+  });
+});
+
+test("normalizeTipMetricsWindowDays accepts only supported dashboard ranges", () => {
+  assert.equal(normalizeTipMetricsWindowDays("7"), 7);
+  assert.equal(normalizeTipMetricsWindowDays(30), 30);
+  assert.equal(normalizeTipMetricsWindowDays("45"), 60);
+});
+
+test("buildTipMetricsTrend returns a daily primary-currency series with zero-filled gaps", () => {
+  const trend = buildTipMetricsTrend({
+    windowDays: 7,
+    currency: "USD",
+    now: new Date("2026-04-11T10:00:00Z"),
+    rows: [
+      {
+        currency: "USD",
+        netAmount: 10,
+        paidAt: new Date("2026-04-05T09:00:00Z"),
+      },
+      {
+        currency: "USD",
+        netAmount: 5.5,
+        paidAt: new Date("2026-04-05T16:00:00Z"),
+      },
+      {
+        currency: "USD",
+        netAmount: 7,
+        paidAt: new Date("2026-04-09T12:00:00Z"),
+      },
+      {
+        currency: "EUR",
+        netAmount: 99,
+        paidAt: new Date("2026-04-09T12:00:00Z"),
+      },
+    ],
+  });
+
+  assert.equal(trend.length, 7);
+  assert.deepEqual(trend[0], {
+    date: "2026-04-05",
+    netAmount: 15.5,
+  });
+  assert.deepEqual(trend[4], {
+    date: "2026-04-09",
+    netAmount: 7,
+  });
+  assert.deepEqual(trend[6], {
+    date: "2026-04-11",
+    netAmount: 0,
+  });
+});
+
+test("loadTipMetricsSummary returns summary and trend for the selected range", async () => {
+  const { dbClient } = createMockMetricsDb([
+    {
+      id: 1,
+      shop: "demo.myshopify.com",
+      orderId: "1001",
+      currency: "USD",
+      tipAmount: 12,
+      refundedAmount: 0,
+      netAmount: 12,
+      status: "paid",
+      paidAt: new Date("2026-04-09T10:00:00Z"),
+    },
+    {
+      id: 2,
+      shop: "demo.myshopify.com",
+      orderId: "1002",
+      currency: "USD",
+      tipAmount: 8,
+      refundedAmount: 0,
+      netAmount: 8,
+      status: "paid",
+      paidAt: new Date("2026-04-11T10:00:00Z"),
+    },
+    {
+      id: 3,
+      shop: "demo.myshopify.com",
+      orderId: "1003",
+      currency: "EUR",
+      tipAmount: 5,
+      refundedAmount: 0,
+      netAmount: 5,
+      status: "paid",
+      paidAt: new Date("2026-04-11T10:00:00Z"),
+    },
+  ]);
+
+  const summary = await loadTipMetricsSummary({
+    shop: "demo.myshopify.com",
+    windowDays: 7,
+    now: new Date("2026-04-11T12:00:00Z"),
+    dbClient,
+  });
+
+  assert.equal(summary.windowDays, 7);
+  assert.equal(summary.trendCurrency, "USD");
+  assert.equal(summary.primary.currency, "USD");
+  assert.equal(summary.primary.totalNet, 20);
+  assert.equal(summary.trend.length, 7);
+  assert.deepEqual(summary.trend[4], {
+    date: "2026-04-09",
+    netAmount: 12,
+  });
+  assert.deepEqual(summary.trend[6], {
+    date: "2026-04-11",
+    netAmount: 8,
   });
 });
