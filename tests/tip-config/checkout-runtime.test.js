@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   DEFAULT_TIP_PERCENTAGES,
+  DEFAULT_SUPPORT_ROTATION_SECONDS,
   getTipRuntimeConfigFromAppMetafields,
 } from "../../extensions/checkout-ui/src/runtime-config.js";
 
@@ -41,6 +42,7 @@ test("returns parsed runtime config from shop app metafields using the new seman
     support_text_1: "a",
     support_text_2: "b",
     support_text_3: "c",
+    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
@@ -78,6 +80,7 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
     support_text_1: "a",
     support_text_2: "",
     support_text_3: "",
+    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "c",
     cta_label: "Update tip",
     tip_percentages: "5,10,15",

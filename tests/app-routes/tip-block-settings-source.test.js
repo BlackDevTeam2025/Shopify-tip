@@ -41,6 +41,11 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="custom_border_color"'), false);
   assert.equal(routeSource.includes("Apply colors to checkout profile"), false);
   assert.equal(routeSource.includes("Support message 1"), true);
+  assert.equal(
+    routeSource.includes("Support message rotation (seconds)"),
+    true,
+  );
+  assert.equal(routeSource.includes('name="support_rotation_seconds"'), true);
   assert.equal(routeSource.includes("Auto-rotate every 30 seconds"), false);
   assert.equal(
     routeSource.includes("Hide tip choices until the buyer opts in"),

@@ -34,7 +34,8 @@ test("checkout extension source keeps the form visible and uses the custom-only 
   assert.equal(checkoutSource.includes("changeCustomAmount(1)"), true);
   assert.equal(checkoutSource.includes("Estimated total"), false);
   assert.equal(checkoutSource.includes("setInterval(() =>"), true);
-  assert.equal(checkoutSource.includes("30000"), true);
+  assert.equal(checkoutSource.includes("support_rotation_seconds"), true);
+  assert.equal(checkoutSource.includes("supportRotationSeconds * 1000"), true);
   assert.equal(checkoutSource.includes('background="subdued"'), true);
   assert.equal(checkoutSource.includes('border="base"'), true);
   assert.equal(checkoutSource.includes('borderRadius="large"'), true);

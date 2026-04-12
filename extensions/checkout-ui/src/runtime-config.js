@@ -2,6 +2,7 @@ export const TIP_CONFIG_NAMESPACE = "tip_block_settings";
 export const TIP_CONFIG_KEY = "config";
 export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
+export const DEFAULT_SUPPORT_ROTATION_SECONDS = 30;
 
 const DEFAULTS = {
   enabled: false,
@@ -21,6 +22,7 @@ const DEFAULTS = {
   support_text_1: "Show your support for the team.",
   support_text_2: "",
   support_text_3: "",
+  support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
   thank_you_text: "THANK YOU, WE APPRECIATE IT.",
   cta_label: "Update tip",
   tip_percentages: DEFAULT_TIP_PERCENTAGES,
@@ -73,6 +75,19 @@ function normalizePositiveInteger(value, fallback) {
   }
 
   return parsed;
+}
+
+function normalizeSupportRotationSeconds(
+  value,
+  fallback = DEFAULT_SUPPORT_ROTATION_SECONDS,
+) {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.min(300, Math.max(5, parsed));
 }
 
 function normalizeDefaultTipChoice(
@@ -174,6 +189,10 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
       support_text_1: supportMessages.support_text_1,
       support_text_2: supportMessages.support_text_2,
       support_text_3: supportMessages.support_text_3,
+      support_rotation_seconds: normalizeSupportRotationSeconds(
+        parsed.support_rotation_seconds,
+        DEFAULTS.support_rotation_seconds,
+      ),
       thank_you_text: normalizeText(
         parsed.thank_you_text ?? parsed.caption3,
         DEFAULTS.thank_you_text,

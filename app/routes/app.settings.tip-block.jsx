@@ -6,13 +6,14 @@ import { authenticateBillingRoute } from "../billing/gate.server";
 import { isLicenseActive } from "../billing/license.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
 import {
+  DEFAULT_SUPPORT_ROTATION_SECONDS,
   PREVIEW_SUBTOTAL,
   buildPreviewPresets,
   calculatePreviewTipAmount,
   formatPreviewCurrency,
   getPreviewSupportMessage,
   isPreviewCustomAmountValid,
-  parsePreviewCustomAmount,
+  normalizePreviewSupportRotationSeconds,
   resolvePreviewDefaultSelection,
 } from "../tip-preview.utils.js";
 
@@ -477,6 +478,27 @@ export default function TipBlockSettings() {
     () => getPreviewSupportMessage(draftConfig),
     [draftConfig],
   );
+  const previewSupportMessages = useMemo(
+    () =>
+      [
+        draftConfig.support_text_1 ?? draftConfig.support_text,
+        draftConfig.support_text_2,
+        draftConfig.support_text_3,
+      ].filter((message) => String(message ?? "").trim().length > 0),
+    [
+      draftConfig.support_text,
+      draftConfig.support_text_1,
+      draftConfig.support_text_2,
+      draftConfig.support_text_3,
+    ],
+  );
+  const previewRotationSeconds = useMemo(
+    () =>
+      normalizePreviewSupportRotationSeconds(
+        draftConfig.support_rotation_seconds,
+      ),
+    [draftConfig.support_rotation_seconds],
+  );
   const [previewSelectedTip, setPreviewSelectedTip] = useState(() =>
     resolvePreviewDefaultSelection(draftConfig.default_tip_choice, previewPresets),
   );
@@ -490,8 +512,9 @@ export default function TipBlockSettings() {
       customAmount: "",
       presets: previewPresets,
       subtotal: PREVIEW_SUBTOTAL,
-    }),
+      }),
   );
+  const [previewSupportMessageIndex, setPreviewSupportMessageIndex] = useState(0);
 
   useEffect(() => {
     setDraftConfig(cloneConfig(currentConfig));
@@ -514,6 +537,21 @@ export default function TipBlockSettings() {
     setPreviewAppliedTipAmount(defaultAppliedAmount);
   }, [draftConfig.default_tip_choice, previewPresets]);
 
+  useEffect(() => {
+    if (previewSupportMessages.length <= 1) {
+      setPreviewSupportMessageIndex(0);
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setPreviewSupportMessageIndex(
+        (previousIndex) => (previousIndex + 1) % previewSupportMessages.length,
+      );
+    }, previewRotationSeconds * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [previewRotationSeconds, previewSupportMessages]);
+
   const updateDraft = (field, value) => {
     setDraftConfig((previous) => ({
       ...previous,
@@ -535,6 +573,8 @@ export default function TipBlockSettings() {
   const previewCustomSelected = previewSelectedTip === "custom";
   const previewCanSubmitCustom =
     previewCustomSelected && isPreviewCustomAmountValid(previewCustomAmount);
+  const visiblePreviewSupportMessage =
+    previewSupportMessages[previewSupportMessageIndex] ?? previewSupportMessage;
 
   const handlePreviewChooseTip = (selection) => {
     setPreviewSelectedTip(selection);
@@ -664,8 +704,8 @@ export default function TipBlockSettings() {
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>Rotating support messages</h2>
                 <p style={styles.sectionDescription}>
-                  Checkout rotates through filled messages every 30 seconds.
-                  Leave optional messages blank if you want less variation.
+                  Used when more than one support message is filled in. Leave
+                  optional messages blank if you want less variation.
                 </p>
               </div>
 
@@ -723,6 +763,39 @@ export default function TipBlockSettings() {
                       style={styles.input}
                       placeholder="A small tip makes a big difference."
                     />
+                  </div>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label
+                    htmlFor="support_rotation_seconds"
+                    style={styles.label}
+                  >
+                    Support message rotation (seconds)
+                  </label>
+                  <div style={styles.inputWrap}>
+                    <input
+                      id="support_rotation_seconds"
+                      name="support_rotation_seconds"
+                      type="number"
+                      min="5"
+                      max="300"
+                      step="1"
+                      inputMode="numeric"
+                      value={
+                        draftConfig.support_rotation_seconds ??
+                        DEFAULT_SUPPORT_ROTATION_SECONDS
+                      }
+                      onChange={(event) =>
+                        updateDraft(
+                          "support_rotation_seconds",
+                          event.target.value,
+                        )
+                      }
+                      style={styles.input}
+                      placeholder={String(DEFAULT_SUPPORT_ROTATION_SECONDS)}
+                    />
+                    <span style={styles.suffix}>sec</span>
                   </div>
                 </div>
               </div>
@@ -863,7 +936,9 @@ export default function TipBlockSettings() {
                 <p style={styles.previewHeading}>
                   {draftConfig.heading || "Tip"}
                 </p>
-                <p style={styles.previewSupportText}>{previewSupportMessage}</p>
+                <p style={styles.previewSupportText}>
+                  {visiblePreviewSupportMessage}
+                </p>
 
                 <div style={styles.previewChoicesGrid}>
                   {previewPresets.map((preset) => {

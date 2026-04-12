@@ -2,11 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  DEFAULT_SUPPORT_ROTATION_SECONDS,
+  MAX_SUPPORT_ROTATION_SECONDS,
+  MIN_SUPPORT_ROTATION_SECONDS,
   PREVIEW_SUBTOTAL,
   buildPreviewPresets,
   calculatePreviewTipAmount,
   getPreviewSupportMessage,
   isPreviewCustomAmountValid,
+  normalizePreviewSupportRotationSeconds,
   resolvePreviewDefaultSelection,
 } from "../../app/tip-preview.utils.js";
 
@@ -88,4 +92,20 @@ test("preview support message picks the first non-empty configured line", () => 
   });
 
   assert.equal(message, "Tips go directly to staff.");
+});
+
+test("preview support rotation seconds falls back and clamps safely", () => {
+  assert.equal(
+    normalizePreviewSupportRotationSeconds(""),
+    DEFAULT_SUPPORT_ROTATION_SECONDS,
+  );
+  assert.equal(
+    normalizePreviewSupportRotationSeconds("2"),
+    MIN_SUPPORT_ROTATION_SECONDS,
+  );
+  assert.equal(normalizePreviewSupportRotationSeconds("15"), 15);
+  assert.equal(
+    normalizePreviewSupportRotationSeconds("999"),
+    MAX_SUPPORT_ROTATION_SECONDS,
+  );
 });

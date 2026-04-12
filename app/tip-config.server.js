@@ -14,6 +14,9 @@ export const DEFAULT_TIP_INFRASTRUCTURE_STATUS = "pending";
 export const DEFAULT_TIP_METRICS_ENABLED = true;
 export const DEFAULT_TIP_METRICS_WINDOW_DAYS = 60;
 export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
+export const DEFAULT_SUPPORT_ROTATION_SECONDS = 30;
+export const MIN_SUPPORT_ROTATION_SECONDS = 5;
+export const MAX_SUPPORT_ROTATION_SECONDS = 300;
 
 function normalizeBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -39,6 +42,22 @@ function normalizePositiveInteger(value, fallback) {
   }
 
   return parsed;
+}
+
+export function normalizeSupportRotationSeconds(
+  value,
+  fallback = DEFAULT_SUPPORT_ROTATION_SECONDS,
+) {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.min(
+    MAX_SUPPORT_ROTATION_SECONDS,
+    Math.max(MIN_SUPPORT_ROTATION_SECONDS, parsed),
+  );
 }
 
 function normalizeDefaultTipChoice(value, fallback = DEFAULT_DEFAULT_TIP_CHOICE) {
@@ -165,6 +184,7 @@ export function getDefaultTipConfig() {
     support_text_1: DEFAULT_SUPPORT_TEXT_1,
     support_text_2: DEFAULT_SUPPORT_TEXT_2,
     support_text_3: DEFAULT_SUPPORT_TEXT_3,
+    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,
@@ -243,6 +263,10 @@ export function buildTipRuntimeConfig({
     support_text_1: supportMessages.support_text_1,
     support_text_2: supportMessages.support_text_2,
     support_text_3: supportMessages.support_text_3,
+    support_rotation_seconds: normalizeSupportRotationSeconds(
+      savedConfig.support_rotation_seconds,
+      defaults.support_rotation_seconds,
+    ),
     thank_you_text: getLegacyThankYouText(savedConfig, defaults.thank_you_text),
     cta_label: normalizeText(savedConfig.cta_label, defaults.cta_label),
     tip_percentages: normalizeTipPercentages(
@@ -312,6 +336,10 @@ export function buildTipConfigFromFormData(formData) {
     support_text_3: normalizeText(
       formData.get("support_text_3"),
       DEFAULT_SUPPORT_TEXT_3,
+    ),
+    support_rotation_seconds: normalizeSupportRotationSeconds(
+      formData.get("support_rotation_seconds"),
+      DEFAULT_SUPPORT_ROTATION_SECONDS,
     ),
     thank_you_text: normalizeText(
       formData.get("thank_you_text"),

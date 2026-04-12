@@ -270,6 +270,7 @@ function TipBlockExtension() {
     [settings.support_text, settings.support_text_1, settings.support_text_2, settings.support_text_3],
   );
   const supportMessagesKey = supportMessages.join("\u0000");
+  const supportRotationSeconds = settings.support_rotation_seconds ?? 30;
   const visibleSupportMessage =
     supportMessages[supportMessageIndex] ?? settings.support_text;
 
@@ -305,10 +306,10 @@ function TipBlockExtension() {
       setSupportMessageIndex((previousIndex) =>
         (previousIndex + 1) % supportMessages.length,
       );
-    }, 30000);
+    }, supportRotationSeconds * 1000);
 
     return () => clearInterval(intervalId);
-  }, [supportMessagesKey]);
+  }, [supportMessagesKey, supportRotationSeconds]);
 
   const isCustomSelected = selectedTip === "custom";
   const customAmountProvided = hasCustomAmountInput(customAmount);

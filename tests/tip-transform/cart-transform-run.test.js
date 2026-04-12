@@ -39,7 +39,7 @@ test("cartTransformRun updates the saved tip line with the dynamic amount and la
       {
         lineUpdate: {
           cartLineId: "gid://shopify/CartLine/2",
-          title: "Add 10% ($8.86) tip",
+          title: "Tip",
           price: {
             adjustment: {
               fixedPricePerUnit: {

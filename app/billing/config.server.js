@@ -2,7 +2,7 @@ const DEFAULT_MONTHLY_PRICE = 9.99;
 const DEFAULT_YEARLY_PRICE = 99;
 const DEFAULT_CURRENCY = "USD";
 const DEFAULT_TRIAL_DAYS = 3;
-const DEFAULT_APP_HANDLE = "khanh-dev";
+const DEFAULT_APP_HANDLE = "snaptip";
 
 function parsePositiveNumber(value, fallback) {
   const parsed = Number(value);
