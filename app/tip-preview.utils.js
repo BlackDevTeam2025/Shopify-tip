@@ -1,7 +1,4 @@
 export const PREVIEW_SUBTOTAL = 100;
-export const DEFAULT_SUPPORT_ROTATION_SECONDS = 30;
-export const MIN_SUPPORT_ROTATION_SECONDS = 5;
-export const MAX_SUPPORT_ROTATION_SECONDS = 300;
 
 const DEFAULT_PRESETS = [10, 15, 20];
 
@@ -13,22 +10,6 @@ function normalizePercentage(value, fallback) {
   }
 
   return parsed;
-}
-
-export function normalizePreviewSupportRotationSeconds(
-  value,
-  fallback = DEFAULT_SUPPORT_ROTATION_SECONDS,
-) {
-  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
-  }
-
-  return Math.min(
-    MAX_SUPPORT_ROTATION_SECONDS,
-    Math.max(MIN_SUPPORT_ROTATION_SECONDS, parsed),
-  );
 }
 
 export function buildPreviewPresets(presetValues = {}) {
@@ -92,15 +73,8 @@ export function calculatePreviewTipAmount({
 }
 
 export function getPreviewSupportMessage(config = {}) {
-  const candidates = [
-    config.support_text_1,
-    config.support_text,
-    config.support_text_2,
-    config.support_text_3,
-  ];
-
   return (
-    candidates.find((message) => String(message ?? "").trim().length > 0) ??
+    String(config.support_text ?? config.support_text_1 ?? "").trim() ||
     "Show your support for the team."
   );
 }

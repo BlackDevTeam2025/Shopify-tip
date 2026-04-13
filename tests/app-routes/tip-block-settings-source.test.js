@@ -22,11 +22,13 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("Live preview"), true);
   assert.equal(routeSource.includes("tip-settings-layout"), true);
   assert.equal(routeSource.includes("tip-settings-preview-column"), true);
+  assert.equal(routeSource.includes("Enable tipping"), true);
+  assert.equal(routeSource.includes('name="enabled"'), true);
   assert.equal(routeSource.includes('name="heading"'), true);
-  assert.equal(routeSource.includes('name="support_text"'), false);
-  assert.equal(routeSource.includes('name="support_text_1"'), true);
-  assert.equal(routeSource.includes('name="support_text_2"'), true);
-  assert.equal(routeSource.includes('name="support_text_3"'), true);
+  assert.equal(routeSource.includes('name="support_text"'), true);
+  assert.equal(routeSource.includes('name="support_text_1"'), false);
+  assert.equal(routeSource.includes('name="support_text_2"'), false);
+  assert.equal(routeSource.includes('name="support_text_3"'), false);
   assert.equal(routeSource.includes('name="cta_label"'), true);
   assert.equal(routeSource.includes('name="thank_you_text"'), true);
   assert.equal(routeSource.includes('name="preset_1"'), true);
@@ -40,13 +42,15 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="custom_text_color"'), false);
   assert.equal(routeSource.includes('name="custom_border_color"'), false);
   assert.equal(routeSource.includes("Apply colors to checkout profile"), false);
-  assert.equal(routeSource.includes("Support message 1"), true);
+  assert.equal(routeSource.includes("Support message"), true);
+  assert.equal(routeSource.includes("Support message 1"), false);
+  assert.equal(routeSource.includes("textarea"), true);
+  assert.equal(routeSource.includes("placeholder=\"Show your appreciation\""), true);
   assert.equal(
     routeSource.includes("Support message rotation (seconds)"),
-    true,
+    false,
   );
-  assert.equal(routeSource.includes('name="support_rotation_seconds"'), true);
-  assert.equal(routeSource.includes("Auto-rotate every 30 seconds"), false);
+  assert.equal(routeSource.includes('name="support_rotation_seconds"'), false);
   assert.equal(
     routeSource.includes("Hide tip choices until the buyer opts in"),
     false,
@@ -57,4 +61,8 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("Default selected preset"), true);
   assert.equal(routeSource.includes("Interactive simulation only"), true);
   assert.equal(routeSource.includes("PREVIEW_SUBTOTAL"), true);
+  assert.equal(
+    routeSource.includes("Edit the exact tip content buyers see in checkout."),
+    true,
+  );
 });

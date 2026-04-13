@@ -211,14 +211,6 @@ function buildTipChoices({
   return fixedChoices;
 }
 
-function getSupportMessages(settings) {
-  return [
-    settings.support_text_1 ?? settings.support_text,
-    settings.support_text_2,
-    settings.support_text_3,
-  ].filter((message) => String(message ?? "").trim().length > 0);
-}
-
 export default async () => {
   render(<TipBlockExtension />, document.body);
 };
@@ -253,7 +245,6 @@ function TipBlockExtension() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [supportMessageIndex, setSupportMessageIndex] = useState(0);
   const autoSyncKeyRef = useRef("");
   const choices = useMemo(
     () =>
@@ -265,14 +256,7 @@ function TipBlockExtension() {
       }),
     [currencyCode, percentages, settings.custom_amount_enabled, subtotal],
   );
-  const supportMessages = useMemo(
-    () => getSupportMessages(settings),
-    [settings.support_text, settings.support_text_1, settings.support_text_2, settings.support_text_3],
-  );
-  const supportMessagesKey = supportMessages.join("\u0000");
-  const supportRotationSeconds = settings.support_rotation_seconds ?? 30;
-  const visibleSupportMessage =
-    supportMessages[supportMessageIndex] ?? settings.support_text;
+  const visibleSupportMessage = settings.support_text;
 
   useEffect(() => {
     const nextSelection = getInitialSelection({
@@ -293,23 +277,6 @@ function TipBlockExtension() {
     settings.default_tip_choice,
     percentages.join(","),
   ]);
-
-  useEffect(() => {
-    if (supportMessages.length <= 1) {
-      setSupportMessageIndex(0);
-      return;
-    }
-
-    setSupportMessageIndex(Math.floor(Math.random() * supportMessages.length));
-
-    const intervalId = setInterval(() => {
-      setSupportMessageIndex((previousIndex) =>
-        (previousIndex + 1) % supportMessages.length,
-      );
-    }, supportRotationSeconds * 1000);
-
-    return () => clearInterval(intervalId);
-  }, [supportMessagesKey, supportRotationSeconds]);
 
   const isCustomSelected = selectedTip === "custom";
   const customAmountProvided = hasCustomAmountInput(customAmount);
@@ -629,9 +596,9 @@ function TipBlockExtension() {
         border="base"
         borderRadius="large"
         padding="base"
-        gap="base"
+        gap="small"
       >
-        <s-grid gridTemplateColumns="1fr 1fr" gap="small">
+        <s-grid gridTemplateColumns="repeat(4, minmax(0, 1fr))" gap="extra-tight">
         {choices.map((choice) => {
           const isSelected = selectedTip === choice.key;
 
@@ -660,7 +627,7 @@ function TipBlockExtension() {
                 });
               }}
             >
-              <s-stack gap="extra-tight" inline-size="100%">
+              <s-stack gap="none" inline-size="100%">
                 <s-text type="strong">{choice.primaryLabel}</s-text>
                 <s-text type="small" tone="subdued">
                   {choice.secondaryLabel}
@@ -672,7 +639,7 @@ function TipBlockExtension() {
         </s-grid>
 
         {isCustomSelected && settings.custom_amount_enabled && (
-          <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small">
+          <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="extra-tight">
             <s-text-field
               name="custom-amount"
               value={customAmount}

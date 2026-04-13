@@ -6,10 +6,6 @@ import {
   DEFAULT_DEFAULT_TIP_CHOICE,
   DEFAULT_HEADING,
   DEFAULT_SUPPORT_TEXT,
-  DEFAULT_SUPPORT_TEXT_1,
-  DEFAULT_SUPPORT_TEXT_2,
-  DEFAULT_SUPPORT_TEXT_3,
-  DEFAULT_SUPPORT_ROTATION_SECONDS,
   DEFAULT_THANK_YOU_TEXT,
   DEFAULT_TIP_INFRASTRUCTURE_STATUS,
   DEFAULT_TIP_METRICS_ENABLED,
@@ -28,15 +24,16 @@ test("parseTipConfigValue falls back to defaults for empty input", () => {
   assert.deepEqual(parseTipConfigValue(undefined), getDefaultTipConfig());
 });
 
-test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", () => {
+test("buildTipRuntimeConfig migrates legacy fields into the compact runtime shape", () => {
   const runtimeConfig = buildTipRuntimeConfig({
     savedConfig: {
+      enabled: "true",
       widget_title: "Support our crew",
       caption1: "Thank you for supporting the staff.",
       caption3: "THANK YOU.",
       tip_percentages: "5,10,15,18,20",
-      percentage_display_option: "amount_first",
       custom_amount_enabled: "false",
+      default_tip_choice: "preset_3",
       tip_variant_id: "44334137737309",
     },
     enabled: true,
@@ -48,7 +45,7 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     transform_active: false,
     custom_amount_enabled: false,
     hide_until_opt_in: false,
-    default_tip_choice: DEFAULT_DEFAULT_TIP_CHOICE,
+    default_tip_choice: "preset_3",
     tip_product_id: "",
     tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
     tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
@@ -57,43 +54,36 @@ test("buildTipRuntimeConfig migrates legacy fields into the new runtime shape", 
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Support our crew",
     support_text: "Thank you for supporting the staff.",
-    support_text_1: "Thank you for supporting the staff.",
-    support_text_2: "",
-    support_text_3: "",
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "THANK YOU.",
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: "5,10,15",
   });
 });
 
-test("buildTipConfigFromFormData normalizes the compact admin settings payload", () => {
+test("buildTipConfigFromFormData normalizes the admin settings payload", () => {
   const formData = new FormData();
+  formData.set("enabled", "on");
   formData.set("heading", "Add gratuity");
-  formData.set("support_text_1", "Show your support.");
-  formData.set("support_text_2", "Tips help the team.");
-  formData.set("support_text_3", "Every amount matters.");
+  formData.set("support_text", "Show your support.");
   formData.set("thank_you_text", "THANK YOU, TEAM.");
   formData.set("cta_label", "Add tip now");
   formData.set("preset_1", "12");
   formData.set("preset_2", "16");
   formData.set("preset_3", "21");
+  formData.set("default_tip_choice", "preset_1");
   formData.set("custom_amount_enabled", "on");
 
   assert.deepEqual(buildTipConfigFromFormData(formData), {
+    enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
     hide_until_opt_in: false,
-    default_tip_choice: DEFAULT_DEFAULT_TIP_CHOICE,
+    default_tip_choice: "preset_1",
     tip_metrics_enabled: true,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Add gratuity",
     support_text: "Show your support.",
-    support_text_1: "Show your support.",
-    support_text_2: "Tips help the team.",
-    support_text_3: "Every amount matters.",
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "THANK YOU, TEAM.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
@@ -122,21 +112,6 @@ test("buildTipRuntimeConfig falls back to defaults for invalid preset values", (
   assert.equal(runtimeConfig.tip_percentages, DEFAULT_TIP_PERCENTAGES);
 });
 
-test("buildTipRuntimeConfig keeps the tip form visible and normalizes default choice", () => {
-  const runtimeConfig = buildTipRuntimeConfig({
-    savedConfig: {
-      custom_amount_enabled: "false",
-      hide_until_opt_in: "false",
-      default_tip_choice: "preset_3",
-    },
-    enabled: true,
-  });
-
-  assert.equal(runtimeConfig.custom_amount_enabled, false);
-  assert.equal(runtimeConfig.hide_until_opt_in, false);
-  assert.equal(runtimeConfig.default_tip_choice, "preset_3");
-});
-
 test("normalizeProductVariantId accepts raw numeric IDs", () => {
   assert.equal(
     normalizeProductVariantId("44334137737309"),
@@ -156,7 +131,7 @@ test("normalizeProductVariantId accepts admin variant URLs", () => {
 test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
   const payload = getTipConfigSyncPayload({
     storedValue:
-      '{"widget_title":"Legacy title","tip_percentages":"10","custom_amount_enabled":"false","tip_variant_id":"44334137737309","caption1":"a","caption2":"b","caption3":"c"}',
+      '{"widget_title":"Legacy title","tip_percentages":"10","custom_amount_enabled":"false","tip_variant_id":"44334137737309","caption1":"a","caption3":"c"}',
     enabled: true,
   });
 
@@ -177,10 +152,6 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
       tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
       heading: "Legacy title",
       support_text: "a",
-      support_text_1: "a",
-      support_text_2: "",
-      support_text_3: "",
-      support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
       thank_you_text: "c",
       cta_label: DEFAULT_CTA_LABEL,
       tip_percentages: "10,15,20",
@@ -188,7 +159,7 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
   });
 });
 
-test("getTipConfigSyncPayload skips sync when stored config already matches the new runtime shape", () => {
+test("getTipConfigSyncPayload skips sync when stored config already matches the runtime shape", () => {
   const storedConfig = {
     enabled: true,
     plus_only: true,
@@ -204,10 +175,6 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: "Support our team",
     support_text: "a",
-    support_text_1: "a",
-    support_text_2: "",
-    support_text_3: "",
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
@@ -224,9 +191,9 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
   });
 });
 
-test("getDefaultTipConfig uses editable three-preset defaults", () => {
+test("getDefaultTipConfig uses the compact admin defaults", () => {
   assert.deepEqual(getDefaultTipConfig(), {
-    enabled: false,
+    enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -240,10 +207,6 @@ test("getDefaultTipConfig uses editable three-preset defaults", () => {
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
-    support_text_1: DEFAULT_SUPPORT_TEXT_1,
-    support_text_2: DEFAULT_SUPPORT_TEXT_2,
-    support_text_3: DEFAULT_SUPPORT_TEXT_3,
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,

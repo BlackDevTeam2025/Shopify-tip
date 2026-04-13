@@ -6,28 +6,26 @@ import { authenticateBillingRoute } from "../billing/gate.server";
 import { isLicenseActive } from "../billing/license.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
 import {
-  DEFAULT_SUPPORT_ROTATION_SECONDS,
   PREVIEW_SUBTOTAL,
   buildPreviewPresets,
   calculatePreviewTipAmount,
   formatPreviewCurrency,
   getPreviewSupportMessage,
   isPreviewCustomAmountValid,
-  normalizePreviewSupportRotationSeconds,
   resolvePreviewDefaultSelection,
 } from "../tip-preview.utils.js";
 
 const responsiveLayoutStyles = `
   .tip-settings-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 428px;
+    gap: 32px;
     align-items: start;
   }
 
   .tip-settings-preview-column {
     position: sticky;
-    top: 24px;
+    top: 20px;
   }
 
   @media (max-width: 1200px) {
@@ -45,14 +43,16 @@ const responsiveLayoutStyles = `
 const styles = {
   page: {
     display: "grid",
-    gap: "24px",
-    maxWidth: "1460px",
+    gap: "28px",
+    maxWidth: "1640px",
     margin: "0 auto",
     width: "100%",
+    fontFamily:
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   layout: {
     display: "grid",
-    gap: "24px",
+    gap: "28px",
     alignItems: "start",
   },
   hero: {
@@ -61,87 +61,116 @@ const styles = {
   },
   title: {
     margin: 0,
-    fontSize: "38px",
-    lineHeight: 1.08,
-    fontWeight: 800,
+    fontSize: "36px",
+    lineHeight: 1.04,
+    fontWeight: 700,
     letterSpacing: "-0.04em",
     color: "#111827",
   },
   subtitle: {
     margin: 0,
-    fontSize: "16px",
-    lineHeight: 1.7,
-    color: "#4b5563",
+    fontSize: "15px",
+    lineHeight: 1.55,
+    color: "#6b7280",
+  },
+  eyebrow: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: 1.4,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#6b7280",
   },
   card: {
     background: "#ffffff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "28px",
-    boxShadow: "0 20px 45px rgba(15, 23, 42, 0.06)",
+    border: "1px solid #e6eaf0",
+    borderRadius: "26px",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.05)",
     overflow: "hidden",
   },
   cardHeader: {
-    padding: "26px 30px 18px",
+    padding: "22px 28px 14px",
     borderBottom: "1px solid #eef2f7",
     display: "grid",
     gap: "8px",
   },
   body: {
-    padding: "30px 34px",
+    padding: "30px 32px 34px",
     display: "grid",
-    gap: "24px",
+    gap: "22px",
   },
   sectionCard: {
     display: "grid",
     gap: "18px",
-    padding: "22px",
+    padding: "24px",
     borderRadius: "22px",
-    border: "1px solid #e5e7eb",
-    background: "#fbfcfd",
+    border: "1px solid #e6eaf0",
+    background: "#ffffff",
   },
   sectionHeader: {
     display: "grid",
-    gap: "6px",
+    gap: "4px",
   },
   sectionTitle: {
     margin: 0,
-    fontSize: "16px",
+    fontSize: "17px",
     lineHeight: 1.3,
-    fontWeight: 800,
+    fontWeight: 700,
     color: "#111827",
   },
   sectionDescription: {
     margin: 0,
-    fontSize: "14px",
-    lineHeight: 1.6,
+    fontSize: "13px",
+    lineHeight: 1.55,
     color: "#6b7280",
+  },
+  toggleRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "16px",
+  },
+  toggleCopy: {
+    display: "grid",
+    gap: "4px",
+  },
+  toggleTitle: {
+    margin: 0,
+    fontSize: "17px",
+    lineHeight: 1.3,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  toggleDescription: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: 1.55,
+    color: "#6b7280",
+  },
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    marginTop: "2px",
   },
   presetsPanel: {
     display: "grid",
     gap: "18px",
-    padding: "22px",
+    padding: "24px",
   },
   presetsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: "18px",
-  },
-  supportGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "18px",
-  },
-  supportPrimary: {
-    gridColumn: "1 / -1",
+    gap: "16px",
   },
   compactRow: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "18px",
+    gap: "16px",
   },
   fieldGroup: {
     display: "grid",
-    gap: "8px",
+    gap: "7px",
   },
   label: {
     fontSize: "13px",
@@ -152,7 +181,7 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr auto",
     alignItems: "center",
-    borderRadius: "16px",
+    borderRadius: "14px",
     border: "1px solid #dbe1ea",
     background: "#ffffff",
     overflow: "hidden",
@@ -163,31 +192,46 @@ const styles = {
     background: "transparent",
     color: "#111827",
     padding: "14px 16px",
-    fontSize: "15px",
+    fontSize: "14px",
     lineHeight: 1.4,
     boxSizing: "border-box",
     outline: "none",
   },
-  select: {
+  textarea: {
     width: "100%",
+    minHeight: "132px",
     border: "1px solid #dbe1ea",
-    borderRadius: "16px",
+    borderRadius: "14px",
     background: "#ffffff",
     color: "#111827",
     padding: "14px 16px",
-    fontSize: "15px",
+    fontSize: "14px",
+    lineHeight: 1.5,
+    boxSizing: "border-box",
+    outline: "none",
+    resize: "vertical",
+    fontFamily: "inherit",
+  },
+  select: {
+    width: "100%",
+    border: "1px solid #dbe1ea",
+    borderRadius: "14px",
+    background: "#ffffff",
+    color: "#111827",
+    padding: "14px 16px",
+    fontSize: "14px",
     lineHeight: 1.4,
     boxSizing: "border-box",
     outline: "none",
   },
   suffix: {
     padding: "0 16px",
-    fontSize: "15px",
+    fontSize: "14px",
     color: "#4b5563",
     whiteSpace: "nowrap",
   },
   actionBar: {
-    padding: "20px 30px",
+    padding: "18px 24px",
     borderTop: "1px solid #eef2f7",
     display: "flex",
     justifyContent: "space-between",
@@ -208,10 +252,10 @@ const styles = {
     alignItems: "center",
   },
   previewCard: {
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e6eaf0",
     borderRadius: "24px",
     background: "#ffffff",
-    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.06)",
+    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.05)",
     overflow: "hidden",
   },
   previewHeader: {
@@ -219,14 +263,14 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: "12px",
-    padding: "18px 20px",
+    padding: "16px 18px",
     borderBottom: "1px solid #eef2f7",
     background: "#fafbfc",
   },
   previewTitle: {
     margin: 0,
     fontSize: "15px",
-    fontWeight: 800,
+    fontWeight: 700,
     color: "#111827",
   },
   previewHeaderMeta: {
@@ -245,40 +289,40 @@ const styles = {
     gap: "12px",
     border: "1px solid #dbe1ea",
     borderRadius: "18px",
-    background: "#f8fafc",
-    padding: "14px",
+    background: "#fbfdff",
+    padding: "16px",
   },
   previewHeading: {
     margin: 0,
-    fontSize: "20px",
+    fontSize: "15px",
     lineHeight: 1.2,
     letterSpacing: "-0.02em",
-    fontWeight: 800,
+    fontWeight: 700,
     color: "#111827",
   },
   previewSupportText: {
     margin: 0,
-    fontSize: "13px",
+    fontSize: "11px",
     lineHeight: 1.45,
     color: "#4b5563",
   },
   previewChoicesGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "10px",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: "6px",
   },
   previewChoiceButton: {
     appearance: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     border: "1px solid #d1d5db",
     background: "#ffffff",
     color: "#111827",
     cursor: "pointer",
-    padding: "8px 8px",
-    minHeight: "58px",
+    padding: "7px 6px",
+    minHeight: "48px",
     display: "grid",
     placeItems: "center",
-    gap: "2px",
+    gap: "1px",
     transition: "all 0.15s ease",
   },
   previewChoiceButtonActive: {
@@ -287,14 +331,14 @@ const styles = {
     background: "#eff6ff",
   },
   previewChoicePrimary: {
-    fontSize: "16px",
+    fontSize: "12px",
     fontWeight: 700,
     lineHeight: 1.15,
     margin: 0,
     color: "#111827",
   },
   previewChoiceSecondary: {
-    fontSize: "11px",
+    fontSize: "9px",
     lineHeight: 1.2,
     margin: 0,
     color: "#6b7280",
@@ -302,28 +346,28 @@ const styles = {
   previewCustomRow: {
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr) auto",
-    gap: "10px",
+    gap: "6px",
     alignItems: "center",
   },
   previewCustomInput: {
     width: "100%",
     border: "1px solid #d1d5db",
-    borderRadius: "12px",
+    borderRadius: "10px",
     background: "#ffffff",
     color: "#111827",
-    fontSize: "13px",
-    padding: "9px 12px",
+    fontSize: "11px",
+    padding: "8px 10px",
     outline: "none",
     boxSizing: "border-box",
   },
   previewSubmitButton: {
     appearance: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     border: "1px solid #1d4ed8",
     background: "#2563eb",
     color: "#ffffff",
-    padding: "9px 12px",
-    fontSize: "13px",
+    padding: "8px 11px",
+    fontSize: "11px",
     fontWeight: 700,
     cursor: "pointer",
   },
@@ -341,18 +385,18 @@ const styles = {
   },
   previewTipLabel: {
     margin: 0,
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#374151",
   },
   previewTipAmount: {
     margin: 0,
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: 700,
     color: "#111827",
   },
   previewThankYou: {
     margin: 0,
-    fontSize: "11px",
+    fontSize: "10px",
     letterSpacing: "0.04em",
     textTransform: "uppercase",
     color: "#4b5563",
@@ -478,27 +522,6 @@ export default function TipBlockSettings() {
     () => getPreviewSupportMessage(draftConfig),
     [draftConfig],
   );
-  const previewSupportMessages = useMemo(
-    () =>
-      [
-        draftConfig.support_text_1 ?? draftConfig.support_text,
-        draftConfig.support_text_2,
-        draftConfig.support_text_3,
-      ].filter((message) => String(message ?? "").trim().length > 0),
-    [
-      draftConfig.support_text,
-      draftConfig.support_text_1,
-      draftConfig.support_text_2,
-      draftConfig.support_text_3,
-    ],
-  );
-  const previewRotationSeconds = useMemo(
-    () =>
-      normalizePreviewSupportRotationSeconds(
-        draftConfig.support_rotation_seconds,
-      ),
-    [draftConfig.support_rotation_seconds],
-  );
   const [previewSelectedTip, setPreviewSelectedTip] = useState(() =>
     resolvePreviewDefaultSelection(draftConfig.default_tip_choice, previewPresets),
   );
@@ -514,7 +537,6 @@ export default function TipBlockSettings() {
       subtotal: PREVIEW_SUBTOTAL,
       }),
   );
-  const [previewSupportMessageIndex, setPreviewSupportMessageIndex] = useState(0);
 
   useEffect(() => {
     setDraftConfig(cloneConfig(currentConfig));
@@ -537,21 +559,6 @@ export default function TipBlockSettings() {
     setPreviewAppliedTipAmount(defaultAppliedAmount);
   }, [draftConfig.default_tip_choice, previewPresets]);
 
-  useEffect(() => {
-    if (previewSupportMessages.length <= 1) {
-      setPreviewSupportMessageIndex(0);
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setPreviewSupportMessageIndex(
-        (previousIndex) => (previousIndex + 1) % previewSupportMessages.length,
-      );
-    }, previewRotationSeconds * 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [previewRotationSeconds, previewSupportMessages]);
-
   const updateDraft = (field, value) => {
     setDraftConfig((previous) => ({
       ...previous,
@@ -573,8 +580,6 @@ export default function TipBlockSettings() {
   const previewCustomSelected = previewSelectedTip === "custom";
   const previewCanSubmitCustom =
     previewCustomSelected && isPreviewCustomAmountValid(previewCustomAmount);
-  const visiblePreviewSupportMessage =
-    previewSupportMessages[previewSupportMessageIndex] ?? previewSupportMessage;
 
   const handlePreviewChooseTip = (selection) => {
     setPreviewSelectedTip(selection);
@@ -613,9 +618,10 @@ export default function TipBlockSettings() {
       <div style={styles.page}>
         <style>{responsiveLayoutStyles}</style>
         <div style={styles.hero}>
+          <p style={styles.eyebrow}>Tip settings</p>
           <h1 style={styles.title}>Tipping</h1>
           <p style={styles.subtitle}>
-            Edit the tip choices shown directly in checkout.
+            Edit the exact tip content buyers see in checkout.
           </p>
         </div>
 
@@ -635,11 +641,32 @@ export default function TipBlockSettings() {
               <input type="hidden" name="custom_amount_enabled" value="on" />
 
             <div style={styles.sectionCard}>
+              <div style={styles.toggleRow}>
+                <div style={styles.toggleCopy}>
+                  <h2 style={styles.toggleTitle}>Enable tipping</h2>
+                  <p style={styles.toggleDescription}>
+                    Tipping is active in checkout.
+                  </p>
+                </div>
+                <input
+                  id="enabled"
+                  name="enabled"
+                  type="checkbox"
+                  checked={Boolean(draftConfig.enabled)}
+                  onChange={(event) =>
+                    updateDraft("enabled", event.target.checked)
+                  }
+                  style={styles.checkbox}
+                />
+              </div>
+            </div>
+
+            <div style={styles.sectionCard}>
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>Summary</h2>
                 <p style={styles.sectionDescription}>
-                  These fields control the title, CTA, and closing note shown
-                  in checkout.
+                  Controls the title, button label, and closing note shown in
+                  checkout.
                 </p>
               </div>
 
@@ -657,7 +684,7 @@ export default function TipBlockSettings() {
                         updateDraft("heading", event.target.value)
                       }
                       style={styles.input}
-                      placeholder="Add tip"
+                      placeholder="Show your appreciation"
                     />
                   </div>
                 </div>
@@ -675,7 +702,7 @@ export default function TipBlockSettings() {
                         updateDraft("cta_label", event.target.value)
                       }
                       style={styles.input}
-                      placeholder="Update tip"
+                      placeholder="Add a tip"
                     />
                   </div>
                 </div>
@@ -702,102 +729,26 @@ export default function TipBlockSettings() {
 
             <div style={styles.sectionCard}>
               <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Rotating support messages</h2>
+                <h2 style={styles.sectionTitle}>Support message</h2>
                 <p style={styles.sectionDescription}>
-                  Used when more than one support message is filled in. Leave
-                  optional messages blank if you want less variation.
+                  Shown below the title in checkout.
                 </p>
               </div>
 
-              <div style={styles.supportGrid}>
-                <div style={{ ...styles.fieldGroup, ...styles.supportPrimary }}>
-                  <label htmlFor="support_text_1" style={styles.label}>
-                    Support message 1
-                  </label>
-                  <div style={styles.inputWrap}>
-                    <input
-                      id="support_text_1"
-                      name="support_text_1"
-                      value={
-                        draftConfig.support_text_1 ?? draftConfig.support_text
-                      }
-                      onChange={(event) =>
-                        updateDraft("support_text_1", event.target.value)
-                      }
-                      style={styles.input}
-                      placeholder="Show your support for the team."
-                    />
-                  </div>
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="support_text_2" style={styles.label}>
-                    Support message 2
-                  </label>
-                  <div style={styles.inputWrap}>
-                    <input
-                      id="support_text_2"
-                      name="support_text_2"
-                      value={draftConfig.support_text_2 ?? ""}
-                      onChange={(event) =>
-                        updateDraft("support_text_2", event.target.value)
-                      }
-                      style={styles.input}
-                      placeholder="Every tip goes directly to the staff."
-                    />
-                  </div>
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="support_text_3" style={styles.label}>
-                    Support message 3
-                  </label>
-                  <div style={styles.inputWrap}>
-                    <input
-                      id="support_text_3"
-                      name="support_text_3"
-                      value={draftConfig.support_text_3 ?? ""}
-                      onChange={(event) =>
-                        updateDraft("support_text_3", event.target.value)
-                      }
-                      style={styles.input}
-                      placeholder="A small tip makes a big difference."
-                    />
-                  </div>
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label
-                    htmlFor="support_rotation_seconds"
-                    style={styles.label}
-                  >
-                    Support message rotation (seconds)
-                  </label>
-                  <div style={styles.inputWrap}>
-                    <input
-                      id="support_rotation_seconds"
-                      name="support_rotation_seconds"
-                      type="number"
-                      min="5"
-                      max="300"
-                      step="1"
-                      inputMode="numeric"
-                      value={
-                        draftConfig.support_rotation_seconds ??
-                        DEFAULT_SUPPORT_ROTATION_SECONDS
-                      }
-                      onChange={(event) =>
-                        updateDraft(
-                          "support_rotation_seconds",
-                          event.target.value,
-                        )
-                      }
-                      style={styles.input}
-                      placeholder={String(DEFAULT_SUPPORT_ROTATION_SECONDS)}
-                    />
-                    <span style={styles.suffix}>sec</span>
-                  </div>
-                </div>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="support_text" style={styles.label}>
+                  Message
+                </label>
+                <textarea
+                  id="support_text"
+                  name="support_text"
+                  value={draftConfig.support_text ?? ""}
+                  onChange={(event) =>
+                    updateDraft("support_text", event.target.value)
+                  }
+                  style={styles.textarea}
+                  placeholder="Every tip goes directly to the people who packed your order."
+                />
               </div>
             </div>
 
@@ -805,8 +756,7 @@ export default function TipBlockSettings() {
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>Preset percentages</h2>
                 <p style={styles.sectionDescription}>
-                  Buyers always see three percentage choices and one custom
-                  amount option in checkout.
+                  Buyers always see three percentage choices plus custom amount.
                 </p>
               </div>
 
@@ -937,7 +887,7 @@ export default function TipBlockSettings() {
                   {draftConfig.heading || "Tip"}
                 </p>
                 <p style={styles.previewSupportText}>
-                  {visiblePreviewSupportMessage}
+                  {previewSupportMessage}
                 </p>
 
                 <div style={styles.previewChoicesGrid}>

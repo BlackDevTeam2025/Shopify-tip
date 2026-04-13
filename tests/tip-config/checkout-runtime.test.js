@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 
 import {
   DEFAULT_TIP_PERCENTAGES,
-  DEFAULT_SUPPORT_ROTATION_SECONDS,
   getTipRuntimeConfigFromAppMetafields,
 } from "../../extensions/checkout-ui/src/runtime-config.js";
 
@@ -19,7 +18,7 @@ test("returns parsed runtime config from shop app metafields using the new seman
         namespace: "tip_block_settings",
         key: "config",
         value:
-          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":false,"tip_variant_id":"","heading":"Support our team","support_text_1":"a","support_text_2":"b","support_text_3":"c","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21"}',
+          '{"enabled":true,"plus_only":true,"transform_active":true,"custom_amount_enabled":true,"hide_until_opt_in":false,"tip_variant_id":"","heading":"Support our team","support_text":"a","thank_you_text":"THANK YOU.","cta_label":"Add tip now","tip_percentages":"12,16,21"}',
       },
     },
   ]);
@@ -39,10 +38,6 @@ test("returns parsed runtime config from shop app metafields using the new seman
     tip_metrics_window_days: 60,
     heading: "Support our team",
     support_text: "a",
-    support_text_1: "a",
-    support_text_2: "b",
-    support_text_3: "c",
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "THANK YOU.",
     cta_label: "Add tip now",
     tip_percentages: "12,16,21",
@@ -77,10 +72,6 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
     tip_metrics_window_days: 60,
     heading: "Support our team",
     support_text: "a",
-    support_text_1: "a",
-    support_text_2: "",
-    support_text_3: "",
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: "c",
     cta_label: "Update tip",
     tip_percentages: "5,10,15",

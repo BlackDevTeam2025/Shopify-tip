@@ -5,18 +5,12 @@ export const TIP_CONFIG_KEY = "config";
 export const DEFAULT_TIP_PERCENTAGES = "10,15,20";
 export const DEFAULT_HEADING = "Tip";
 export const DEFAULT_SUPPORT_TEXT = "Show your support for the team.";
-export const DEFAULT_SUPPORT_TEXT_1 = DEFAULT_SUPPORT_TEXT;
-export const DEFAULT_SUPPORT_TEXT_2 = "";
-export const DEFAULT_SUPPORT_TEXT_3 = "";
 export const DEFAULT_THANK_YOU_TEXT = "THANK YOU, WE APPRECIATE IT.";
 export const DEFAULT_CTA_LABEL = "Update tip";
 export const DEFAULT_TIP_INFRASTRUCTURE_STATUS = "pending";
 export const DEFAULT_TIP_METRICS_ENABLED = true;
 export const DEFAULT_TIP_METRICS_WINDOW_DAYS = 60;
 export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
-export const DEFAULT_SUPPORT_ROTATION_SECONDS = 30;
-export const MIN_SUPPORT_ROTATION_SECONDS = 5;
-export const MAX_SUPPORT_ROTATION_SECONDS = 300;
 
 function normalizeBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -42,22 +36,6 @@ function normalizePositiveInteger(value, fallback) {
   }
 
   return parsed;
-}
-
-export function normalizeSupportRotationSeconds(
-  value,
-  fallback = DEFAULT_SUPPORT_ROTATION_SECONDS,
-) {
-  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
-  }
-
-  return Math.min(
-    MAX_SUPPORT_ROTATION_SECONDS,
-    Math.max(MIN_SUPPORT_ROTATION_SECONDS, parsed),
-  );
 }
 
 function normalizeDefaultTipChoice(value, fallback = DEFAULT_DEFAULT_TIP_CHOICE) {
@@ -112,25 +90,6 @@ function getLegacySupportText(
   );
 }
 
-function getSupportMessages(savedConfig = {}) {
-  const primary = normalizeText(
-    savedConfig.support_text_1 ?? savedConfig.support_text ?? savedConfig.caption1,
-    DEFAULT_SUPPORT_TEXT_1,
-  );
-
-  return {
-    support_text_1: primary,
-    support_text_2: normalizeText(
-      savedConfig.support_text_2,
-      DEFAULT_SUPPORT_TEXT_2,
-    ),
-    support_text_3: normalizeText(
-      savedConfig.support_text_3,
-      DEFAULT_SUPPORT_TEXT_3,
-    ),
-  };
-}
-
 function getLegacyThankYouText(
   savedConfig = {},
   fallback = DEFAULT_THANK_YOU_TEXT,
@@ -167,7 +126,7 @@ export function normalizeProductVariantId(value) {
 
 export function getDefaultTipConfig() {
   return {
-    enabled: false,
+    enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -181,10 +140,6 @@ export function getDefaultTipConfig() {
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: DEFAULT_HEADING,
     support_text: DEFAULT_SUPPORT_TEXT,
-    support_text_1: DEFAULT_SUPPORT_TEXT_1,
-    support_text_2: DEFAULT_SUPPORT_TEXT_2,
-    support_text_3: DEFAULT_SUPPORT_TEXT_3,
-    support_rotation_seconds: DEFAULT_SUPPORT_ROTATION_SECONDS,
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,
@@ -200,7 +155,7 @@ export function parseTipConfigValue(value) {
     const parsed = JSON.parse(value);
     return buildTipRuntimeConfig({
       savedConfig: parsed,
-      enabled: parsed.enabled === true,
+      enabled: true,
     });
   } catch {
     return getDefaultTipConfig();
@@ -213,11 +168,10 @@ export function buildTipRuntimeConfig({
   transformActive,
 }) {
   const defaults = getDefaultTipConfig();
-  const supportMessages = getSupportMessages(savedConfig);
 
   return {
     ...defaults,
-    enabled,
+    enabled: normalizeBoolean(savedConfig.enabled, defaults.enabled) && enabled,
     plus_only: normalizePlusOnly(savedConfig.plus_only, defaults.plus_only),
     transform_active: normalizeBoolean(
       transformActive ?? savedConfig.transform_active,
@@ -259,14 +213,7 @@ export function buildTipRuntimeConfig({
       savedConfig.heading ?? savedConfig.widget_title,
       defaults.heading,
     ),
-    support_text: supportMessages.support_text_1,
-    support_text_1: supportMessages.support_text_1,
-    support_text_2: supportMessages.support_text_2,
-    support_text_3: supportMessages.support_text_3,
-    support_rotation_seconds: normalizeSupportRotationSeconds(
-      savedConfig.support_rotation_seconds,
-      defaults.support_rotation_seconds,
-    ),
+    support_text: getLegacySupportText(savedConfig, defaults.support_text),
     thank_you_text: getLegacyThankYouText(savedConfig, defaults.thank_you_text),
     cta_label: normalizeText(savedConfig.cta_label, defaults.cta_label),
     tip_percentages: normalizeTipPercentages(
@@ -310,6 +257,7 @@ export function buildTipConfigFromFormData(formData) {
   ];
 
   return {
+    enabled: formData.get("enabled") === "on",
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",
@@ -321,26 +269,7 @@ export function buildTipConfigFromFormData(formData) {
     tip_metrics_enabled: true,
     tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
     heading: normalizeText(formData.get("heading"), DEFAULT_HEADING),
-    support_text: normalizeText(
-      formData.get("support_text_1"),
-      DEFAULT_SUPPORT_TEXT,
-    ),
-    support_text_1: normalizeText(
-      formData.get("support_text_1"),
-      DEFAULT_SUPPORT_TEXT_1,
-    ),
-    support_text_2: normalizeText(
-      formData.get("support_text_2"),
-      DEFAULT_SUPPORT_TEXT_2,
-    ),
-    support_text_3: normalizeText(
-      formData.get("support_text_3"),
-      DEFAULT_SUPPORT_TEXT_3,
-    ),
-    support_rotation_seconds: normalizeSupportRotationSeconds(
-      formData.get("support_rotation_seconds"),
-      DEFAULT_SUPPORT_ROTATION_SECONDS,
-    ),
+    support_text: normalizeText(formData.get("support_text"), DEFAULT_SUPPORT_TEXT),
     thank_you_text: normalizeText(
       formData.get("thank_you_text"),
       DEFAULT_THANK_YOU_TEXT,
