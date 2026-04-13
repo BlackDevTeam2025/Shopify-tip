@@ -69,12 +69,44 @@ export function getManagedPricingDetails() {
   };
 }
 
-export function getManagedPricingUrl(shop) {
-  const shopHandle = normalizeShopHandle(shop);
+export function getManagedPricingUrl(shop, appHandle = MANAGED_PRICING_APP_HANDLE) {
+  return getManagedPricingUrlWithHandle(shop, appHandle);
+}
 
-  if (!shopHandle) {
+export function getManagedPricingUrlWithHandle(shop, appHandle) {
+  const shopHandle = normalizeShopHandle(shop);
+  const normalizedAppHandle = normalizeAppHandle(appHandle);
+
+  if (!shopHandle || !normalizedAppHandle) {
     return null;
   }
 
-  return `https://admin.shopify.com/store/${shopHandle}/charges/${MANAGED_PRICING_APP_HANDLE}/pricing_plans`;
+  return `https://admin.shopify.com/store/${shopHandle}/charges/${normalizedAppHandle}/pricing_plans`;
+}
+
+export async function resolveManagedPricingAppHandle(admin) {
+  if (typeof admin?.graphql !== "function") {
+    return MANAGED_PRICING_APP_HANDLE;
+  }
+
+  try {
+    const response = await admin.graphql(`#graphql
+      query TipManagedPricingAppHandle {
+        currentAppInstallation {
+          app {
+            handle
+          }
+        }
+      }
+    `);
+    const json = await response.json();
+    const handle = normalizeAppHandle(
+      json?.data?.currentAppInstallation?.app?.handle,
+    );
+
+    return handle || MANAGED_PRICING_APP_HANDLE;
+  } catch (error) {
+    console.error("Unable to resolve managed pricing app handle", error);
+    return MANAGED_PRICING_APP_HANDLE;
+  }
 }

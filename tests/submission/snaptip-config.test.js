@@ -23,19 +23,13 @@ test("SnapTip production config uses the snaptip.tech domain", () => {
   );
 });
 
-test("SnapTip production config declares submission-critical webhooks", () => {
+test("SnapTip production config declares only baseline webhooks before protected-data approval", () => {
   const config = readProjectFile("shopify.app.snaptip.toml");
 
   for (const topic of [
     'topics = [ "app/uninstalled" ]',
     'topics = [ "app/scopes_update" ]',
     'topics = [ "app_subscriptions/update" ]',
-    'topics = [ "orders/paid" ]',
-    'topics = [ "refunds/create" ]',
-    'topics = [ "orders/cancelled" ]',
-    'topics = [ "customers/data_request" ]',
-    'topics = [ "customers/redact" ]',
-    'topics = [ "shop/redact" ]',
   ]) {
     assert.equal(config.includes(topic), true);
   }
@@ -64,3 +58,17 @@ test("compliance webhook routes exist for App Store review", () => {
   }
 });
 
+test("protected compliance webhook topics are not declared before approval", () => {
+  const config = readProjectFile("shopify.app.snaptip.toml");
+
+  for (const topic of [
+    'topics = [ "orders/paid" ]',
+    'topics = [ "refunds/create" ]',
+    'topics = [ "orders/cancelled" ]',
+    'topics = [ "customers/data_request" ]',
+    'topics = [ "customers/redact" ]',
+    'topics = [ "shop/redact" ]',
+  ]) {
+    assert.equal(config.includes(topic), false);
+  }
+});

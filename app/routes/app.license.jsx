@@ -4,6 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import {
   getManagedPricingDetails,
   getManagedPricingUrl,
+  resolveManagedPricingAppHandle,
 } from "../billing/config.server.js";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { buildLicensePageState } from "../billing/license-page.server";
@@ -32,16 +33,18 @@ function throwEmbeddedRedirect(adminContext, url) {
 
 export const loader = async ({ request }) => {
   const adminContext = await authenticateBillingRoute(request);
-  const { licenseState, session, shopEligibility } = adminContext;
+  const { licenseState, session, shopEligibility, admin } = adminContext;
 
   if (shopEligibility.eligible && isLicenseActive(licenseState)) {
     throwEmbeddedRedirect(adminContext, "/app");
   }
 
+  const appHandle = await resolveManagedPricingAppHandle(admin);
+
   return {
     ...getManagedPricingDetails(),
     ...buildLicensePageState({ shopEligibility, licenseState }),
-    pricingUrl: getManagedPricingUrl(session.shop),
+    pricingUrl: getManagedPricingUrl(session.shop, appHandle),
     shopEligibility,
   };
 };

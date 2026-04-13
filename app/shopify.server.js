@@ -8,6 +8,61 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+function shouldRegisterProtectedComplianceWebhooks(env = process.env) {
+  return env.ENABLE_PROTECTED_COMPLIANCE_WEBHOOKS === "true";
+}
+
+function shouldRegisterOrderMetricsWebhooks(env = process.env) {
+  return env.ENABLE_ORDER_METRICS_WEBHOOKS === "true";
+}
+
+const webhookSubscriptions = {
+  APP_UNINSTALLED: {
+    deliveryMethod: DeliveryMethod.Http,
+    callbackUrl: "/webhooks/app/uninstalled",
+  },
+  APP_SCOPES_UPDATE: {
+    deliveryMethod: DeliveryMethod.Http,
+    callbackUrl: "/webhooks/app/scopes_update",
+  },
+  APP_SUBSCRIPTIONS_UPDATE: {
+    deliveryMethod: DeliveryMethod.Http,
+    callbackUrl: "/webhooks/app_subscriptions/update",
+  },
+  ...(shouldRegisterOrderMetricsWebhooks()
+    ? {
+        ORDERS_PAID: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/orders/paid",
+        },
+        REFUNDS_CREATE: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/refunds/create",
+        },
+        ORDERS_CANCELLED: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/orders/cancelled",
+        },
+      }
+    : {}),
+  ...(shouldRegisterProtectedComplianceWebhooks()
+    ? {
+        CUSTOMERS_DATA_REQUEST: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/customers/data_request",
+        },
+        CUSTOMERS_REDACT: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/customers/redact",
+        },
+        SHOP_REDACT: {
+          deliveryMethod: DeliveryMethod.Http,
+          callbackUrl: "/webhooks/shop/redact",
+        },
+      }
+    : {}),
+};
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
@@ -17,44 +72,7 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
-  webhooks: {
-    APP_UNINSTALLED: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/app/uninstalled",
-    },
-    APP_SCOPES_UPDATE: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/app/scopes_update",
-    },
-    APP_SUBSCRIPTIONS_UPDATE: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/app_subscriptions/update",
-    },
-    CUSTOMERS_DATA_REQUEST: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/customers/data_request",
-    },
-    CUSTOMERS_REDACT: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/customers/redact",
-    },
-    SHOP_REDACT: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/shop/redact",
-    },
-    ORDERS_PAID: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/orders/paid",
-    },
-    REFUNDS_CREATE: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/refunds/create",
-    },
-    ORDERS_CANCELLED: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks/orders/cancelled",
-    },
-  },
+  webhooks: webhookSubscriptions,
   future: {
     expiringOfflineAccessTokens: true,
   },
