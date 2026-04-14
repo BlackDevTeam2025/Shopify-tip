@@ -43,9 +43,11 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes('name="custom_border_color"'), false);
   assert.equal(routeSource.includes("Apply colors to checkout profile"), false);
   assert.equal(routeSource.includes("Support message"), true);
+  assert.equal(routeSource.includes("Industry preset"), true);
+  assert.equal(routeSource.includes("- customized"), true);
   assert.equal(routeSource.includes("Support message 1"), false);
   assert.equal(routeSource.includes("textarea"), true);
-  assert.equal(routeSource.includes("placeholder=\"Show your appreciation\""), true);
+  assert.equal(routeSource.includes("placeholder=\"Show your appreciation\""), false);
   assert.equal(
     routeSource.includes("Support message rotation (seconds)"),
     false,
@@ -58,11 +60,12 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("tip_variant_id"), false);
   assert.equal(routeSource.includes("Tip setup ready"), false);
   assert.equal(routeSource.includes("Tip setup needs attention"), false);
-  assert.equal(routeSource.includes("Default selected preset"), true);
+  assert.equal(routeSource.includes("Default selected"), true);
   assert.equal(routeSource.includes("Interactive simulation only"), true);
-  assert.equal(routeSource.includes("PREVIEW_SUBTOTAL"), true);
+  assert.equal(routeSource.includes("PREVIEW_SUBTOTAL"), false);
+  assert.equal(routeSource.includes("Subtotal $"), false);
   assert.equal(
-    routeSource.includes("Edit the exact tip content buyers see in checkout."),
+    routeSource.includes("Edit the tip choices shown directly in checkout."),
     true,
   );
 });
