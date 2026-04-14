@@ -48,6 +48,19 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
           shop: {
             name: "Saovang",
           },
+          ordersCount: {
+            count: 20,
+          },
+        },
+      };
+    }
+
+    if (query.includes("query HomeDashboardPreviousOrders")) {
+      return {
+        data: {
+          ordersCount: {
+            count: 16,
+          },
         },
       };
     }
@@ -85,6 +98,9 @@ test("loadHomeDashboardData returns a ready operational dashboard payload", asyn
   assert.equal(dashboard.tipMetrics.summary.totalNet, 20);
   assert.equal(dashboard.tipMetrics.summary.ordersWithTip, 2);
   assert.equal(dashboard.tipMetrics.summary.averageTip, 10);
+  assert.equal(dashboard.tipMetrics.summary.totalOrders, 20);
+  assert.equal(dashboard.tipMetrics.summary.tipAttachRate, 10);
+  assert.equal(typeof dashboard.tipMetrics.summary.delta.totalNet, "number");
   assert.equal(dashboard.tipMetrics.selectedWindowDays, 60);
   assert.deepEqual(dashboard.tipMetrics.rangeOptions, [7, 30, 60, 90]);
   assert.equal(dashboard.tipMetrics.trendCurrency, "USD");
@@ -128,6 +144,19 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
           shop: {
             name: "Blocked store",
           },
+          ordersCount: {
+            count: 0,
+          },
+        },
+      };
+    }
+
+    if (query.includes("query HomeDashboardPreviousOrders")) {
+      return {
+        data: {
+          ordersCount: {
+            count: 0,
+          },
         },
       };
     }
@@ -158,6 +187,7 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
   assert.equal(dashboard.license.title, "Not active");
   assert.equal(dashboard.tipMetrics.hasData, false);
   assert.equal(dashboard.tipMetrics.summary.totalNet, 0);
+  assert.equal(dashboard.tipMetrics.summary.tipAttachRate, null);
   assert.equal(dashboard.tipMetrics.trend.length, 60);
 });
 
@@ -198,6 +228,19 @@ test("loadHomeDashboardData honors a supported dashboard range override", async 
           shop: {
             name: "Range test",
           },
+          ordersCount: {
+            count: 10,
+          },
+        },
+      };
+    }
+
+    if (query.includes("query HomeDashboardPreviousOrders")) {
+      return {
+        data: {
+          ordersCount: {
+            count: 8,
+          },
         },
       };
     }
@@ -233,4 +276,6 @@ test("loadHomeDashboardData honors a supported dashboard range override", async 
   assert.equal(dashboard.tipMetrics.selectedWindowDays, 30);
   assert.equal(dashboard.tipMetrics.title, "Total tips (net, 30 days)");
   assert.equal(dashboard.tipMetrics.trend.length, 30);
+  assert.equal(dashboard.tipMetrics.summary.totalOrders, 10);
+  assert.equal(dashboard.tipMetrics.summary.tipAttachRate, 10);
 });

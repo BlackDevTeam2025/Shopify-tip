@@ -48,7 +48,7 @@ const styles = {
     margin: "0 auto",
     width: "100%",
     fontFamily:
-      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
   layout: {
     display: "grid",
@@ -614,11 +614,11 @@ export default function TipBlockSettings() {
     );
   };
   return (
-    <s-page title="Tip Settings">
+    <s-page title="Setting">
       <div style={styles.page}>
         <style>{responsiveLayoutStyles}</style>
         <div style={styles.hero}>
-          <p style={styles.eyebrow}>Tip settings</p>
+          <p style={styles.eyebrow}>Setting</p>
           <h1 style={styles.title}>Tipping</h1>
           <p style={styles.subtitle}>
             Edit the exact tip content buyers see in checkout.

@@ -33,7 +33,7 @@ export default function App() {
       {showNav ? (
         <s-app-nav>
           <s-link href={homeHref}>Home</s-link>
-          <s-link href={settingsHref}>Tip Settings</s-link>
+          <s-link href={settingsHref}>Setting</s-link>
         </s-app-nav>
       ) : null}
       <Outlet />
