@@ -11,6 +11,9 @@ import {
   resolvePreviewDefaultSelection,
 } from "../tip-preview.utils.js";
 
+const uiFontFamily =
+  '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif';
+
 const INDUSTRY_MESSAGES = {
   general: "Every tip goes directly to the people who packed your order.",
   food: "Tips support the chefs behind every order.",
@@ -48,27 +51,28 @@ const styles = {
   page: {
     minHeight: "100%",
     background: "#f5f7fa",
-    padding: "16px 10px 28px",
+    padding: "20px 16px 32px",
     display: "grid",
     gap: "20px",
     maxWidth: "100%",
     margin: 0,
     width: "100%",
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamily: uiFontFamily,
   },
   pageTitle: {
     margin: 0,
-    fontSize: "28px",
-    lineHeight: 1.1,
-    letterSpacing: "-0.02em",
-    fontWeight: 700,
+    fontSize: "22px",
+    lineHeight: 1.2,
+    letterSpacing: 0,
+    fontWeight: 500,
     color: "#111827",
   },
   pageSub: {
     margin: "4px 0 0",
     fontSize: "13px",
-    lineHeight: 1.5,
-    color: "#6b7280",
+    lineHeight: 1.35,
+    color: "#111827",
+    fontWeight: 400,
   },
   mainCard: {
     background: "#ffffff",
@@ -87,9 +91,9 @@ const styles = {
   },
   cardHeaderTitle: {
     margin: 0,
-    fontSize: "17px",
-    lineHeight: 1.3,
-    fontWeight: 700,
+    fontSize: "14px",
+    lineHeight: 1.4,
+    fontWeight: 500,
     color: "#111827",
   },
   cardHeaderSub: {
@@ -97,6 +101,7 @@ const styles = {
     fontSize: "12px",
     lineHeight: 1.45,
     color: "#6b7280",
+    fontWeight: 400,
   },
   toggle: {
     position: "relative",
@@ -153,7 +158,7 @@ const styles = {
     margin: 0,
     fontSize: "14px",
     lineHeight: 1.4,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#111827",
   },
   sectionHint: {
@@ -161,6 +166,7 @@ const styles = {
     fontSize: "12px",
     lineHeight: 1.5,
     color: "#6b7280",
+    fontWeight: 400,
   },
   row2: {
     display: "grid",
@@ -179,7 +185,7 @@ const styles = {
   label: {
     fontSize: "12px",
     lineHeight: 1.3,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#4b5563",
   },
   input: {
@@ -194,6 +200,7 @@ const styles = {
     background: "#ffffff",
     outline: "none",
     boxSizing: "border-box",
+    fontFamily: uiFontFamily,
   },
   select: {
     width: "100%",
@@ -207,6 +214,7 @@ const styles = {
     background: "#ffffff",
     outline: "none",
     boxSizing: "border-box",
+    fontFamily: uiFontFamily,
   },
   textareaWrap: {
     position: "relative",
@@ -224,7 +232,7 @@ const styles = {
     boxSizing: "border-box",
     resize: "none",
     minHeight: "78px",
-    fontFamily: "inherit",
+    fontFamily: uiFontFamily,
   },
   inputWrap: {
     position: "relative",
@@ -241,6 +249,7 @@ const styles = {
     background: "#ffffff",
     outline: "none",
     boxSizing: "border-box",
+    fontFamily: uiFontFamily,
   },
   charCount: {
     position: "absolute",
@@ -269,6 +278,7 @@ const styles = {
     background: "#ffffff",
     outline: "none",
     boxSizing: "border-box",
+    fontFamily: uiFontFamily,
   },
   percentUnit: {
     position: "absolute",
@@ -335,7 +345,7 @@ const styles = {
     margin: 0,
     fontSize: "12px",
     lineHeight: 1.4,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#4b5563",
   },
   previewOff: {
@@ -360,7 +370,7 @@ const styles = {
     margin: 0,
     fontSize: "15px",
     lineHeight: 1.25,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#111827",
   },
   previewMessage: {
@@ -396,14 +406,14 @@ const styles = {
     margin: 0,
     fontSize: "15px",
     lineHeight: 1.2,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#111827",
   },
   previewCustomText: {
     margin: 0,
     fontSize: "13px",
     lineHeight: 1.25,
-    fontWeight: 500,
+    fontWeight: 400,
     color: "#111827",
   },
   previewTipRow: {
@@ -425,7 +435,7 @@ const styles = {
     fontSize: "13px",
     lineHeight: 1.3,
     color: "#111827",
-    fontWeight: 700,
+    fontWeight: 500,
   },
   previewThanks: {
     margin: 0,
@@ -964,7 +974,9 @@ export default function TipBlockSettings() {
             ) : (
               <div style={styles.previewBody}>
                 <div style={styles.previewTipCard}>
-                  <p style={styles.previewTitle}>{draftConfig.heading || "Tip"}</p>
+                  <p style={styles.previewTitle}>
+                    {draftConfig.heading || "Show your appreciation"}
+                  </p>
                   <p style={styles.previewMessage}>
                     {previewSupportMessage || "Show your support for the team."}
                   </p>

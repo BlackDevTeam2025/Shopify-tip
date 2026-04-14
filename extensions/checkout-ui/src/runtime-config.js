@@ -16,10 +16,10 @@ const DEFAULTS = {
   tip_infrastructure_error: "",
   tip_metrics_enabled: true,
   tip_metrics_window_days: 60,
-  heading: "Tip",
+  heading: "Show your appreciation",
   support_text: "Show your support for the team.",
-  thank_you_text: "THANK YOU, WE APPRECIATE IT.",
-  cta_label: "Update tip",
+  thank_you_text: "Thank you — it means the world to us.",
+  cta_label: "Add a tip",
   tip_percentages: DEFAULT_TIP_PERCENTAGES,
 };
 

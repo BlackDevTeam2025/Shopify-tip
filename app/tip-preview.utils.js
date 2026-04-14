@@ -75,7 +75,7 @@ export function calculatePreviewTipAmount({
 export function getPreviewSupportMessage(config = {}) {
   return (
     String(config.support_text ?? config.support_text_1 ?? "").trim() ||
-    "Show your support for the team."
+    "Shown below the title in checkout. Pick a preset or write your own."
   );
 }
 

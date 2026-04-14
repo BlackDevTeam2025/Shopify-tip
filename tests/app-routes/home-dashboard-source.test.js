@@ -19,14 +19,12 @@ test("home route removes the Shopify template demo content", () => {
 
 test("home route renders only data-first KPI sections", () => {
   assert.equal(routeSource.includes("Home"), true);
-  assert.equal(routeSource.includes("Live"), true);
-  assert.equal(routeSource.includes("Total tips (net)"), true);
-  assert.equal(routeSource.includes("Avg tip per order"), true);
-  assert.equal(routeSource.includes("Tip attach rate"), true);
-  assert.equal(routeSource.includes("Tip trend"), true);
-  assert.equal(routeSource.includes("Contributing orders"), true);
+  assert.equal(routeSource.includes("TOTAL TIPS ·"), true);
+  assert.equal(routeSource.includes("TIP ATTACH RATE ·"), true);
+  assert.equal(routeSource.includes("Daily tip revenue"), true);
   assert.equal(routeSource.includes("rangeOptions.map"), true);
   assert.equal(routeSource.includes("selectedWindowDays"), true);
+  assert.equal(routeSource.includes("dateTrigger"), true);
   assert.equal(routeSource.includes("buildRangeHref"), true);
   assert.equal(routeSource.includes("hoveredPoint"), true);
   assert.equal(routeSource.includes("onMouseEnter"), true);
@@ -43,6 +41,8 @@ test("home route removes operational snapshot cards and config summaries", () =>
   assert.equal(routeSource.includes("App access scopes"), false);
   assert.equal(routeSource.includes("Total tip amount"), false);
   assert.equal(routeSource.includes("License status"), false);
+  assert.equal(routeSource.includes("Avg tip per order"), false);
+  assert.equal(routeSource.includes("Contributing orders"), false);
   assert.equal(routeSource.includes("Analytics"), false);
   assert.equal(routeSource.includes("Staff Tips"), false);
   assert.equal(routeSource.includes("Payouts"), false);

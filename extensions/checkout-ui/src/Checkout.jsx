@@ -679,7 +679,7 @@ function TipBlockExtension() {
               disabled={disablePrimaryAction}
               onClick={handlePrimaryAction}
             >
-              {settings.cta_label || "Update tip"}
+              {settings.cta_label || "Add a tip"}
             </s-button>
           </s-grid>
         )}

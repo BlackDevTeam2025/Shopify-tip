@@ -1,0 +1,226 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.page{background:var(--color-background-tertiary);padding:2rem;min-height:100vh;font-family:var(--font-sans)}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
+.page-title{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.page-sub{font-size:13px;color:var(--color-text-secondary);margin-top:3px}
+.date-selector{position:relative;display:inline-block}
+.date-trigger{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;font-family:var(--font-sans);white-space:nowrap;min-width:200px;justify-content:space-between}
+.date-trigger:hover{background:var(--color-background-secondary)}
+.trigger-left{display:flex;align-items:center;gap:7px}
+.cal-icon{flex-shrink:0;opacity:0.5}
+.chevron{flex-shrink:0;opacity:0.4;transition:transform .15s}
+.chevron.open{transform:rotate(180deg)}
+.dropdown{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);min-width:220px;z-index:10;overflow:hidden}
+.dropdown.open{display:block}
+.dropdown-item{font-size:13px;padding:9px 14px;cursor:pointer;color:var(--color-text-primary);display:flex;align-items:center;justify-content:space-between}
+.dropdown-item:hover{background:var(--color-background-secondary)}
+.dropdown-item.active{color:#0F6E56;font-weight:500}
+.check{opacity:0;font-size:12px;color:#1D9E75}
+.dropdown-item.active .check{opacity:1}
+.dropdown-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:4px 0}
+.custom-inputs{padding:10px 14px 12px;border-top:0.5px solid var(--color-border-tertiary);display:none}
+.custom-inputs.open{display:block}
+.custom-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.custom-row label{font-size:12px;color:var(--color-text-secondary);width:30px;flex-shrink:0}
+.custom-row input[type=date]{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);outline:none}
+.custom-row input[type=date]:focus{border-color:var(--color-border-primary)}
+.apply-btn{width:100%;font-size:12px;padding:6px;border-radius:var(--border-radius-md);border:none;background:var(--color-text-primary);color:var(--color-background-primary);cursor:pointer;font-family:var(--font-sans);font-weight:500}
+.apply-btn:hover{opacity:0.85}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem 1.5rem}
+.card-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.card-value{font-size:34px;font-weight:500;color:var(--color-text-primary);line-height:1.1}
+.card-sub{font-size:12px;color:var(--color-text-secondary);margin-top:6px}
+.card-sub span{color:var(--color-text-primary);font-weight:500}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;margin-top:8px;padding:2px 7px;border-radius:99px}
+.up{background:#E1F5EE;color:#0F6E56}
+.down{background:#FCEBEB;color:#A32D2D}
+.neutral{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.trend-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem 1.5rem}
+.trend-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem}
+.trend-label span{color:var(--color-text-primary);font-weight:500}
+.chart-wrap{height:100px;position:relative}
+</style>
+
+<div class="page">
+  <h2 class="sr-only">SnapTip home</h2>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Home</div>
+      <div class="page-sub" id="sub">Last 30 days</div>
+    </div>
+
+    <div class="date-selector" id="ds">
+      <div class="date-trigger" onclick="toggleDropdown()">
+        <div class="trigger-left">
+          <svg class="cal-icon" width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 1v4M11 1v4M1 7h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span id="trigger-label">Last 30 days</span>
+        </div>
+        <svg class="chevron" id="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="dropdown" id="dropdown">
+        <div class="dropdown-item" onclick="pick('today','Today')">Today<span class="check">✓</span></div>
+        <div class="dropdown-item" onclick="pick('yesterday','Yesterday')">Yesterday<span class="check">✓</span></div>
+        <hr class="dropdown-divider">
+        <div class="dropdown-item" onclick="pick('7d','Last 7 days')">Last 7 days<span class="check">✓</span></div>
+        <div class="dropdown-item active" onclick="pick('30d','Last 30 days')">Last 30 days<span class="check">✓</span></div>
+        <div class="dropdown-item" onclick="pick('90d','Last 90 days')">Last 90 days<span class="check">✓</span></div>
+        <hr class="dropdown-divider">
+        <div class="dropdown-item" onclick="showCustom()">Custom range<span class="check" id="custom-check">✓</span></div>
+        <div class="custom-inputs" id="custom-inputs">
+          <div class="custom-row"><label>From</label><input type="date" id="date-from" value="2026-03-01"></div>
+          <div class="custom-row"><label>To</label><input type="date" id="date-to" value="2026-04-13"></div>
+          <button class="apply-btn" onclick="applyCustom()">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label" id="l1">Total tips · 30 days</div>
+      <div class="card-value" id="v1">$2,148.75</div>
+      <div class="card-sub" id="s1">from <span>98 orders</span> with a tip</div>
+      <div class="badge up" id="b1">↑ 14% vs previous period</div>
+    </div>
+    <div class="card">
+      <div class="card-label" id="l2">Tip attach rate · 30 days</div>
+      <div class="card-value" id="v2">31.5%</div>
+      <div class="card-sub" id="s2"><span>98 of 311 orders</span> tipped</div>
+      <div class="badge down" id="b2">↓ 2% vs previous period</div>
+    </div>
+  </div>
+
+  <div class="trend-card">
+    <div class="trend-label">Daily tip revenue · <span id="trend-label">last 30 days</span></div>
+    <div class="chart-wrap"><canvas id="c"></canvas></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var chart;
+var ddOpen=false;
+var currentKey='30d';
+
+var meta={
+  'today':{sub:'Today',l1:'Total tips · today',v1:'$38.00',s1:'from <span>5 orders</span> with a tip',b1:'up',t1:'↑ vs yesterday',l2:'Tip attach rate · today',v2:'38.5%',s2:'<span>5 of 13 orders</span> tipped',b2:'up',t2:'↑ vs yesterday',tl:'today',days:1},
+  'yesterday':{sub:'Yesterday',l1:'Total tips · yesterday',v1:'$29.50',s1:'from <span>4 orders</span> with a tip',b1:'down',t1:'↓ vs day before',l2:'Tip attach rate · yesterday',v2:'28.6%',s2:'<span>4 of 14 orders</span> tipped',b2:'down',t2:'↓ vs day before',tl:'yesterday',days:1},
+  '7d':{sub:'Last 7 days',l1:'Total tips · 7 days',v1:'$412.25',s1:'from <span>34 orders</span> with a tip',b1:'up',t1:'↑ 6% vs previous period',l2:'Tip attach rate · 7 days',v2:'29.8%',s2:'<span>34 of 114 orders</span> tipped',b2:'down',t2:'↓ 3% vs previous period',tl:'last 7 days',days:7},
+  '30d':{sub:'Last 30 days',l1:'Total tips · 30 days',v1:'$2,148.75',s1:'from <span>98 orders</span> with a tip',b1:'up',t1:'↑ 14% vs previous period',l2:'Tip attach rate · 30 days',v2:'31.5%',s2:'<span>98 of 311 orders</span> tipped',b2:'down',t2:'↓ 2% vs previous period',tl:'last 30 days',days:30},
+  '90d':{sub:'Last 90 days',l1:'Total tips · 90 days',v1:'$6,830.00',s1:'from <span>302 orders</span> with a tip',b1:'up',t1:'↑ 21% vs previous period',l2:'Tip attach rate · 90 days',v2:'33.1%',s2:'<span>302 of 912 orders</span> tipped',b2:'up',t2:'↑ 4% vs previous period',tl:'last 90 days',days:90},
+};
+
+function toggleDropdown(){
+  ddOpen=!ddOpen;
+  document.getElementById('dropdown').classList.toggle('open',ddOpen);
+  document.getElementById('chevron').classList.toggle('open',ddOpen);
+}
+
+document.addEventListener('click',function(e){
+  if(!document.getElementById('ds').contains(e.target)){
+    ddOpen=false;
+    document.getElementById('dropdown').classList.remove('open');
+    document.getElementById('chevron').classList.remove('open');
+  }
+});
+
+function pick(key,label){
+  currentKey=key;
+  document.getElementById('custom-inputs').classList.remove('open');
+  document.getElementById('custom-check').style.opacity='0';
+  document.querySelectorAll('.dropdown-item').forEach(function(el){el.classList.remove('active')});
+  event.currentTarget.classList.add('active');
+  document.getElementById('trigger-label').textContent=label;
+  ddOpen=false;
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('chevron').classList.remove('open');
+  applyMeta(key);
+}
+
+function showCustom(){
+  document.querySelectorAll('.dropdown-item').forEach(function(el){el.classList.remove('active')});
+  event.currentTarget.classList.add('active');
+  document.getElementById('custom-inputs').classList.toggle('open');
+}
+
+function applyCustom(){
+  var from=document.getElementById('date-from').value;
+  var to=document.getElementById('date-to').value;
+  if(!from||!to) return;
+  var f=new Date(from),t=new Date(to);
+  if(t<f) return;
+  var days=Math.round((t-f)/(1000*60*60*24))+1;
+  var fmt=function(s){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];};
+  var label=fmt(from)+' – '+fmt(to);
+  document.getElementById('trigger-label').textContent=label;
+  document.getElementById('custom-check').style.opacity='1';
+  document.getElementById('sub').textContent=label;
+  document.getElementById('l1').textContent='Total tips · custom';
+  document.getElementById('v1').textContent='—';
+  document.getElementById('s1').innerHTML='connect API to load real data';
+  var b1=document.getElementById('b1');b1.textContent='custom range';b1.className='badge neutral';
+  document.getElementById('l2').textContent='Tip attach rate · custom';
+  document.getElementById('v2').textContent='—';
+  document.getElementById('s2').innerHTML='connect API to load real data';
+  var b2=document.getElementById('b2');b2.textContent='custom range';b2.className='badge neutral';
+  document.getElementById('trend-label').textContent=label;
+  ddOpen=false;
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('chevron').classList.remove('open');
+  buildChart(days);
+}
+
+function applyMeta(key){
+  var d=meta[key];
+  if(!d) return;
+  document.getElementById('sub').textContent=d.sub;
+  document.getElementById('l1').textContent=d.l1;
+  document.getElementById('v1').textContent=d.v1;
+  document.getElementById('s1').innerHTML=d.s1;
+  var b1=document.getElementById('b1');b1.textContent=d.t1;b1.className='badge '+(d.b1==='up'?'up':'down');
+  document.getElementById('l2').textContent=d.l2;
+  document.getElementById('v2').textContent=d.v2;
+  document.getElementById('s2').innerHTML=d.s2;
+  var b2=document.getElementById('b2');b2.textContent=d.t2;b2.className='badge '+(d.b2==='up'?'up':'down');
+  document.getElementById('trend-label').textContent=d.tl;
+  buildChart(d.days);
+}
+
+function genData(days){
+  var labels=[],data=[];
+  var today=new Date(2026,3,13);
+  var skip=days<=1?1:days<=7?1:days<=30?3:7;
+  for(var i=days-1;i>=0;i--){
+    var d=new Date(today);d.setDate(today.getDate()-i);
+    var mo=d.toLocaleString('en',{month:'short'});
+    labels.push(i%skip===0?mo+' '+d.getDate():'');
+    data.push(i===0?Math.round(Math.random()*15+5):Math.round(Math.random()*65+15));
+  }
+  return{labels,data};
+}
+
+function buildChart(days){
+  var d=genData(Math.max(days,2));
+  var ctx=document.getElementById('c').getContext('2d');
+  if(chart)chart.destroy();
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels:d.labels,datasets:[{data:d.data,borderColor:'#1D9E75',borderWidth:1.5,pointRadius:0,fill:true,backgroundColor:'rgba(29,158,117,0.08)',tension:0.4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#1a1a1a',bodyColor:'#1a1a1a',borderColor:'rgba(0,0,0,0.1)',borderWidth:0.5,padding:8,displayColors:false,callbacks:{label:function(i){return '$'+i.raw}}}},
+      scales:{
+        x:{grid:{display:false},border:{display:false},ticks:{color:'rgba(128,128,128,0.5)',font:{size:10},maxRotation:0}},
+        y:{grid:{color:'rgba(128,128,128,0.08)'},border:{display:false},ticks:{color:'rgba(128,128,128,0.5)',font:{size:10},callback:function(v){return '$'+v}}}
+      }
+    }
+  });
+}
+
+applyMeta('30d');
+</script>

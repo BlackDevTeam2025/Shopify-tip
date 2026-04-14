@@ -1,16 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useLocation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { appendEmbeddedSearch } from "../embedded-app-url.js";
 
 const responsiveStyles = `
-  @media (max-width: 1000px) {
-    .home-kpi-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-  }
-
   @media (max-width: 760px) {
     .home-kpi-grid {
       grid-template-columns: 1fr !important;
@@ -26,110 +20,152 @@ const responsiveStyles = `
 const styles = {
   page: {
     minHeight: "100%",
-    background: "#f8fafc",
-    padding: "24px 24px 44px",
+    background: "#f5f7fa",
+    padding: "32px 32px 40px",
     fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
   },
   container: {
-    maxWidth: "1760px",
+    maxWidth: "none",
     margin: "0 auto",
     display: "grid",
-    gap: "22px",
+    gap: "24px",
   },
   header: {
-    display: "grid",
-    gap: "6px",
-  },
-  titleRow: {
     display: "flex",
-    alignItems: "center",
-    gap: "10px",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
     flexWrap: "wrap",
+  },
+  titleWrap: {
+    display: "grid",
+    gap: "2px",
   },
   title: {
     margin: 0,
-    fontSize: "34px",
-    lineHeight: 1.08,
-    letterSpacing: "-0.03em",
-    fontWeight: 700,
+    fontSize: "22px",
+    lineHeight: 1.2,
+    letterSpacing: 0,
+    fontWeight: 500,
     color: "#0f172a",
-  },
-  liveBadge: {
-    border: "1px solid #9ae6b4",
-    background: "#dcfce7",
-    color: "#047857",
-    borderRadius: "999px",
-    minHeight: "26px",
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "0 10px",
-    fontSize: "11px",
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-  liveBadgeBlocked: {
-    borderColor: "#fecaca",
-    background: "#fef2f2",
-    color: "#b91c1c",
   },
   subtitle: {
     margin: 0,
-    fontSize: "14px",
-    lineHeight: 1.6,
-    color: "#475569",
+    fontSize: "13px",
+    lineHeight: 1.35,
+    color: "#111827",
+    fontWeight: 400,
+  },
+  dateSelectorWrap: {
+    position: "relative",
+  },
+  dateTrigger: {
+    minWidth: "200px",
+    height: "36px",
+    borderRadius: "12px",
+    border: "0.5px solid #d1d5db",
+    background: "#ffffff",
+    color: "#111827",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+    padding: "0 11px",
+    cursor: "pointer",
+    fontSize: "13px",
+    lineHeight: 1.2,
+    fontWeight: 400,
+    fontFamily:
+      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  },
+  dateTriggerLeft: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "7px",
+  },
+  dateTriggerIcon: {
+    display: "inline-flex",
+    color: "#6b7280",
+  },
+  dateDropdown: {
+    position: "absolute",
+    right: 0,
+    top: "calc(100% + 6px)",
+    minWidth: "200px",
+    borderRadius: "12px",
+    border: "0.5px solid #d1d5db",
+    background: "#ffffff",
+    boxShadow: "0 10px 26px rgba(15, 23, 42, 0.1)",
+    padding: "6px",
+    zIndex: 10,
+  },
+  dateOption: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: "8px",
+    textDecoration: "none",
+    color: "#111827",
+    padding: "7px 8px",
+    fontSize: "12px",
+    lineHeight: 1.3,
+    fontWeight: 400,
+    fontFamily:
+      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+  },
+  dateOptionActive: {
+    color: "#0f6e56",
+    fontWeight: 500,
   },
   kpiGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: "14px",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "12px",
   },
   kpiCard: {
-    borderRadius: "14px",
-    border: "1px solid #e2e8f0",
+    borderRadius: "18px",
+    border: "0.5px solid #e5e7eb",
     background: "#ffffff",
-    padding: "16px 16px 14px",
+    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.04)",
+    padding: "20px 24px",
     display: "grid",
     gap: "8px",
-    boxShadow: "0 8px 22px rgba(15, 23, 42, 0.06)",
   },
   kpiLabel: {
     margin: 0,
     fontSize: "11px",
-    lineHeight: 1.35,
-    letterSpacing: "0.09em",
+    lineHeight: 1.3,
+    letterSpacing: "0.05em",
     textTransform: "uppercase",
-    fontWeight: 700,
-    color: "#64748b",
+    fontWeight: 500,
+    color: "#111827",
   },
   kpiValue: {
     margin: 0,
-    fontSize: "36px",
-    lineHeight: 1.05,
-    letterSpacing: "-0.04em",
-    fontWeight: 700,
+    fontSize: "34px",
+    lineHeight: 1.1,
+    letterSpacing: 0,
+    fontWeight: 500,
     color: "#0f172a",
-  },
-  kpiValueCompact: {
-    fontSize: "32px",
   },
   kpiSubtext: {
     margin: 0,
     fontSize: "12px",
-    lineHeight: 1.5,
-    color: "#475569",
+    lineHeight: 1.4,
+    color: "#111827",
+    fontWeight: 400,
   },
   deltaBadge: {
     justifySelf: "start",
     borderRadius: "999px",
-    minHeight: "24px",
+    minHeight: "30px",
     display: "inline-flex",
     alignItems: "center",
-    padding: "0 10px",
-    fontSize: "11px",
+    padding: "0 12px",
+    fontSize: "10px",
     lineHeight: 1.2,
-    fontWeight: 700,
+    fontWeight: 500,
   },
   deltaPositive: {
     background: "#dcfce7",
@@ -147,69 +183,33 @@ const styles = {
     border: "1px solid #cbd5e1",
   },
   chartCard: {
-    borderRadius: "16px",
-    border: "1px solid #e2e8f0",
+    borderRadius: "18px",
+    border: "0.5px solid #e5e7eb",
     background: "#ffffff",
-    padding: "16px 18px 18px",
+    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.04)",
+    padding: "20px 24px 18px",
     display: "grid",
-    gap: "14px",
-    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+    gap: "16px",
   },
   chartHeader: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "10px",
-  },
-  chartTitleWrap: {
-    display: "grid",
-    gap: "2px",
-  },
-  chartTitle: {
-    margin: 0,
-    fontSize: "28px",
-    lineHeight: 1.1,
-    letterSpacing: "-0.03em",
-    fontWeight: 700,
-    color: "#0f172a",
-  },
-  chartSubtitle: {
-    margin: 0,
-    fontSize: "13px",
-    lineHeight: 1.4,
-    color: "#64748b",
-  },
-  rangePillGroup: {
-    display: "flex",
-    alignItems: "center",
+    justifyContent: "flex-start",
     gap: "8px",
-    flexWrap: "wrap",
   },
-  rangePill: {
-    minWidth: "48px",
-    height: "34px",
-    borderRadius: "11px",
-    border: "1px solid #cbd5e1",
-    background: "#ffffff",
-    color: "#334155",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textDecoration: "none",
-    fontSize: "13px",
-    fontWeight: 700,
-  },
-  rangePillActive: {
-    borderColor: "#0f172a",
-    background: "#0f172a",
-    color: "#f8fafc",
+  chartLabel: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: 1.35,
+    color: "#111827",
+    fontWeight: 400,
   },
   chartWrap: {
     position: "relative",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-    background: "#ffffff",
-    padding: "16px",
+    border: "none",
+    background: "transparent",
+    padding: 0,
     overflow: "hidden",
   },
   chartEmpty: {
@@ -223,7 +223,7 @@ const styles = {
   },
   tooltip: {
     position: "absolute",
-    minWidth: "170px",
+    minWidth: "160px",
     borderRadius: "10px",
     border: "1px solid #cbd5e1",
     background: "#ffffff",
@@ -241,16 +241,16 @@ const styles = {
   },
   tooltipAmount: {
     margin: "4px 0 0",
-    fontSize: "15px",
+    fontSize: "14px",
     lineHeight: 1.2,
-    fontWeight: 700,
+    fontWeight: 500,
     color: "#0f172a",
   },
   chartFootnote: {
     margin: 0,
-    fontSize: "11px",
+    fontSize: "10px",
     lineHeight: 1.4,
-    color: "#64748b",
+    color: "#9ca3af",
   },
 };
 
@@ -265,12 +265,6 @@ function formatMoney(amount, currency) {
   } catch {
     return `${currency} ${Number(amount ?? 0).toFixed(2)}`;
   }
-}
-
-function formatCompactNumber(value) {
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 0,
-  }).format(Number(value ?? 0));
 }
 
 function formatAttachRate(value) {
@@ -297,8 +291,10 @@ function formatDelta(value) {
   }
 
   const rounded = Number(numeric.toFixed(1));
-  const prefix = rounded > 0 ? "+" : "";
-  return `${prefix}${rounded}% vs prev period`;
+  const abs = Math.abs(rounded);
+  const compact = Number.isInteger(abs) ? String(abs) : abs.toFixed(1);
+  const arrow = rounded > 0 ? "↑" : "↓";
+  return `${arrow} ${compact}% vs previous period`;
 }
 
 function deltaTone(value) {
@@ -344,9 +340,9 @@ function getChartMax(points) {
 }
 
 function buildTrendPresentation(points = []) {
-  const width = 1140;
-  const height = 300;
-  const padding = { top: 14, right: 14, bottom: 32, left: 48 };
+  const width = 1440;
+  const height = 170;
+  const padding = { top: 8, right: 10, bottom: 28, left: 46 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
   const safePoints = points.length > 0 ? points : [{ date: "", netAmount: 0 }];
@@ -358,12 +354,12 @@ function buildTrendPresentation(points = []) {
   const positionY = (value) =>
     padding.top + chartHeight - (Number(value ?? 0) / maxValue) * chartHeight;
 
-  const linePath = safePoints
-    .map((point, index) => {
-      const prefix = index === 0 ? "M" : "L";
-      return `${prefix} ${positionX(index).toFixed(2)} ${positionY(point.netAmount).toFixed(2)}`;
-    })
-    .join(" ");
+  const pointsWithPosition = safePoints.map((point, index) => ({
+    x: positionX(index),
+    y: positionY(point.netAmount),
+  }));
+
+  const linePath = buildSmoothPath(pointsWithPosition);
 
   const areaPath = `${linePath} L ${positionX(safePoints.length - 1).toFixed(2)} ${(padding.top + chartHeight).toFixed(2)} L ${positionX(0).toFixed(2)} ${(padding.top + chartHeight).toFixed(2)} Z`;
   const yTicks = [1, 0.66, 0.33, 0].map((factor) => {
@@ -402,6 +398,34 @@ function buildRangeHref(search, windowDays) {
   return appendEmbeddedSearch("/app", `?${params.toString()}`);
 }
 
+function buildSmoothPath(points) {
+  if (!points.length) {
+    return "";
+  }
+
+  if (points.length === 1) {
+    return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+  }
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[index - 1] ?? points[index];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[index + 2] ?? p2;
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  return path;
+}
+
 function getTooltipPosition(point, chart) {
   const xPercent = (point.x / chart.width) * 100;
   const yPercent = (point.y / chart.height) * 100;
@@ -431,35 +455,96 @@ export default function Index() {
   const location = useLocation();
   const chart = buildTrendPresentation(data.tipMetrics.trend);
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const isReady = data.license.status === "ready";
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const selectorRef = useRef(null);
+  const rangeLabels = {
+    7: "Last 7 days",
+    30: "Last 30 days",
+    60: "Last 60 days",
+    90: "Last 90 days",
+  };
+  const selectedRangeLabel =
+    rangeLabels[data.tipMetrics.selectedWindowDays] ??
+    `Last ${data.tipMetrics.selectedWindowDays} days`;
+
+  useEffect(() => {
+    if (!rangeOpen) {
+      return undefined;
+    }
+
+    const onPointerDown = (event) => {
+      if (!selectorRef.current?.contains(event.target)) {
+        setRangeOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [rangeOpen]);
 
   return (
     <div style={styles.page}>
       <style>{responsiveStyles}</style>
       <div style={styles.container}>
         <header style={styles.header}>
-          <div style={styles.titleRow}>
+          <div style={styles.titleWrap}>
             <h1 style={styles.title}>Home</h1>
-            <span
-              style={{
-                ...styles.liveBadge,
-                ...(isReady ? {} : styles.liveBadgeBlocked),
-              }}
-            >
-              Live
-            </span>
+            <p style={styles.subtitle}>{selectedRangeLabel}</p>
           </div>
-          <p style={styles.subtitle}>{data.header.subtitle}</p>
+
+          <div style={styles.dateSelectorWrap} ref={selectorRef}>
+            <button
+              type="button"
+              style={styles.dateTrigger}
+              onClick={() => setRangeOpen((value) => !value)}
+            >
+              <span style={styles.dateTriggerLeft}>
+                <span style={styles.dateTriggerIcon}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M5 1V4M11 1V4M1 7H15" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span>{selectedRangeLabel}</span>
+              </span>
+              <span style={styles.dateTriggerIcon}>{rangeOpen ? "▴" : "▾"}</span>
+            </button>
+
+            {rangeOpen ? (
+              <div style={styles.dateDropdown}>
+                {data.tipMetrics.rangeOptions.map((windowDays) => {
+                  const isActive = windowDays === data.tipMetrics.selectedWindowDays;
+                  return (
+                    <a
+                      key={windowDays}
+                      href={buildRangeHref(location.search, windowDays)}
+                      style={{
+                        ...styles.dateOption,
+                        ...(isActive ? styles.dateOptionActive : {}),
+                      }}
+                      onClick={() => setRangeOpen(false)}
+                    >
+                      <span>{rangeLabels[windowDays] ?? `Last ${windowDays} days`}</span>
+                      <span>{isActive ? "✓" : ""}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         </header>
 
         <section className="home-kpi-grid" style={styles.kpiGrid}>
           <article style={styles.kpiCard}>
-            <p style={styles.kpiLabel}>Total tips (net)</p>
+            <p style={styles.kpiLabel}>{`TOTAL TIPS · ${data.tipMetrics.selectedWindowDays} DAYS`}</p>
             <p style={styles.kpiValue}>
               {formatMoney(
                 data.tipMetrics.summary.totalNet,
                 data.tipMetrics.summary.currency,
               )}
+            </p>
+            <p style={styles.kpiSubtext}>
+              {`from ${data.tipMetrics.summary.ordersWithTip ?? 0} orders with a tip`}
             </p>
             <span
               style={{
@@ -472,45 +557,14 @@ export default function Index() {
           </article>
 
           <article style={styles.kpiCard}>
-            <p style={styles.kpiLabel}>Contributing orders</p>
-            <p style={{ ...styles.kpiValue, ...styles.kpiValueCompact }}>
-              {formatCompactNumber(data.tipMetrics.summary.ordersWithTip)}
-            </p>
-            <span
-              style={{
-                ...styles.deltaBadge,
-                ...deltaTone(data.tipMetrics.summary.delta?.ordersWithTip),
-              }}
-            >
-              {formatDelta(data.tipMetrics.summary.delta?.ordersWithTip)}
-            </span>
-          </article>
-
-          <article style={styles.kpiCard}>
-            <p style={styles.kpiLabel}>Avg tip per order</p>
-            <p style={{ ...styles.kpiValue, ...styles.kpiValueCompact }}>
-              {formatMoney(
-                data.tipMetrics.summary.averageTip,
-                data.tipMetrics.summary.currency,
-              )}
-            </p>
-            <span
-              style={{
-                ...styles.deltaBadge,
-                ...deltaTone(data.tipMetrics.summary.delta?.averageTip),
-              }}
-            >
-              {formatDelta(data.tipMetrics.summary.delta?.averageTip)}
-            </span>
-          </article>
-
-          <article style={styles.kpiCard}>
-            <p style={styles.kpiLabel}>Tip attach rate</p>
-            <p style={{ ...styles.kpiValue, ...styles.kpiValueCompact }}>
+            <p style={styles.kpiLabel}>{`TIP ATTACH RATE · ${data.tipMetrics.selectedWindowDays} DAYS`}</p>
+            <p style={styles.kpiValue}>
               {formatAttachRate(data.tipMetrics.summary.tipAttachRate)}
             </p>
             <p style={styles.kpiSubtext}>
-              of orders included a tip
+              {`${data.tipMetrics.summary.ordersWithTip ?? 0} of ${
+                data.tipMetrics.summary.totalOrders ?? 0
+              } orders tipped`}
             </p>
             <span
               style={{
@@ -525,30 +579,9 @@ export default function Index() {
 
         <section style={styles.chartCard}>
           <div className="home-chart-header" style={styles.chartHeader}>
-            <div style={styles.chartTitleWrap}>
-              <h2 style={styles.chartTitle}>Tip trend</h2>
-              <p style={styles.chartSubtitle}>
-                {`Daily net tips · ${data.tipMetrics.trendCurrency} · ${data.tipMetrics.selectedWindowDays}-day view`}
-              </p>
-            </div>
-
-            <div style={styles.rangePillGroup}>
-              {data.tipMetrics.rangeOptions.map((windowDays) => {
-                const isActive = windowDays === data.tipMetrics.selectedWindowDays;
-                return (
-                  <a
-                    key={windowDays}
-                    href={buildRangeHref(location.search, windowDays)}
-                    style={{
-                      ...styles.rangePill,
-                      ...(isActive ? styles.rangePillActive : {}),
-                    }}
-                  >
-                    {`${windowDays}D`}
-                  </a>
-                );
-              })}
-            </div>
+            <p style={styles.chartLabel}>
+              {`Daily tip revenue · last ${data.tipMetrics.selectedWindowDays} days`}
+            </p>
           </div>
 
           <div style={styles.chartWrap}>
@@ -568,7 +601,7 @@ export default function Index() {
                 viewBox={`0 0 ${chart.width} ${chart.height}`}
                 role="img"
                 aria-label={`Tip trend for the last ${data.tipMetrics.selectedWindowDays} days`}
-                style={{ width: "100%", height: "320px", display: "block" }}
+                style={{ width: "100%", height: "180px", display: "block" }}
               >
                 {chart.yTicks.map((tick, index) => (
                   <g key={`${tick.value}-${index}`}>
@@ -591,12 +624,12 @@ export default function Index() {
                   </g>
                 ))}
 
-                <path d={chart.areaPath} fill="#93c5fd" opacity="0.2" />
+                <path d={chart.areaPath} fill="#1d9e75" opacity="0.08" />
                 <path
                   d={chart.linePath}
                   fill="none"
-                  stroke="#2563eb"
-                  strokeWidth="2.4"
+                  stroke="#1d9e75"
+                  strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -613,13 +646,15 @@ export default function Index() {
                       onFocus={() => setHoveredPoint(point)}
                       onBlur={() => setHoveredPoint(null)}
                     />
-                    <circle
-                      cx={point.x.toFixed(2)}
-                      cy={point.y.toFixed(2)}
-                      r="2.6"
-                      fill="#2563eb"
-                      pointerEvents="none"
-                    />
+                    {hoveredPoint?.date === point.date ? (
+                      <circle
+                        cx={point.x.toFixed(2)}
+                        cy={point.y.toFixed(2)}
+                        r="3.2"
+                        fill="#1d9e75"
+                        pointerEvents="none"
+                      />
+                    ) : null}
                   </g>
                 ))}
 

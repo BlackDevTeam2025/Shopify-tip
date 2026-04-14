@@ -73,7 +73,7 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
     heading: "Support our team",
     support_text: "a",
     thank_you_text: "c",
-    cta_label: "Update tip",
+    cta_label: "Add a tip",
     tip_percentages: "5,10,15",
   });
   assert.equal(DEFAULT_TIP_PERCENTAGES, "10,15,20");

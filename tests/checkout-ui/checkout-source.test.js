@@ -17,7 +17,7 @@ test("checkout extension source keeps the form visible and uses the custom-only 
   assert.equal(checkoutSource.includes("if (!optionsExpanded)"), false);
   assert.equal(checkoutSource.includes("setOptionsExpanded"), false);
   assert.equal(checkoutSource.includes('primaryLabel: "None"'), false);
-  assert.equal(checkoutSource.includes("Update tip"), true);
+  assert.equal(checkoutSource.includes("Add a tip"), true);
   assert.equal(
     checkoutSource.includes("Enter a custom amount before updating the tip."),
     true,
