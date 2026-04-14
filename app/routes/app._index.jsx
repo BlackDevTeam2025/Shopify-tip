@@ -24,14 +24,15 @@ const styles = {
   page: {
     minHeight: "100%",
     background: "#f5f7fa",
-    padding: "32px 32px 40px",
+    padding: "32px 24px 40px",
     fontFamily: uiFontFamily,
   },
   container: {
-    maxWidth: "none",
+    width: "100%",
+    maxWidth: "1180px",
     margin: "0 auto",
     display: "grid",
-    gap: "24px",
+    gap: "28px",
   },
   header: {
     display: "flex",
@@ -121,14 +122,14 @@ const styles = {
   kpiGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
+    gap: "18px",
   },
   kpiCard: {
     borderRadius: "18px",
     border: "0.5px solid #e5e7eb",
     background: "#ffffff",
     boxShadow: "0 8px 20px rgba(15, 23, 42, 0.04)",
-    padding: "20px 24px",
+    padding: "22px 24px",
     display: "grid",
     gap: "8px",
   },
@@ -187,9 +188,9 @@ const styles = {
     border: "0.5px solid #e5e7eb",
     background: "#ffffff",
     boxShadow: "0 8px 20px rgba(15, 23, 42, 0.04)",
-    padding: "20px 24px 18px",
+    padding: "24px 28px 22px",
     display: "grid",
-    gap: "16px",
+    gap: "18px",
   },
   chartHeader: {
     display: "flex",
