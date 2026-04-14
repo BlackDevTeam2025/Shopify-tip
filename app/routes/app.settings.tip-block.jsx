@@ -99,11 +99,44 @@ const styles = {
     color: "#6b7280",
   },
   toggle: {
-    width: "40px",
-    height: "22px",
-    marginTop: "1px",
-    accentColor: "#1d9e75",
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "44px",
+    height: "26px",
     cursor: "pointer",
+  },
+  toggleInput: {
+    position: "absolute",
+    opacity: 0,
+    width: 0,
+    height: 0,
+    pointerEvents: "none",
+  },
+  toggleTrack: {
+    position: "relative",
+    width: "44px",
+    height: "26px",
+    borderRadius: "999px",
+    background: "#cbd5e1",
+    transition: "background 0.16s ease",
+  },
+  toggleTrackOn: {
+    background: "#1d9e75",
+  },
+  toggleThumb: {
+    position: "absolute",
+    top: "4px",
+    left: "4px",
+    width: "18px",
+    height: "18px",
+    borderRadius: "50%",
+    background: "#1f2937",
+    transition: "left 0.16s ease",
+  },
+  toggleThumbOn: {
+    left: "22px",
   },
   section: {
     padding: "20px 24px",
@@ -408,11 +441,6 @@ const styles = {
     lineHeight: 1.4,
     color: "#9ca3af",
   },
-  customizedTag: {
-    fontSize: "11px",
-    lineHeight: 1.2,
-    color: "#b45309",
-  },
 };
 
 function cloneConfig(config) {
@@ -544,13 +572,6 @@ export default function TipBlockSettings() {
   const [selectedIndustryPreset, setSelectedIndustryPreset] = useState(() =>
     resolveIndustryPresetByMessage(currentConfig.support_text),
   );
-  const [supportCustomized, setSupportCustomized] = useState(() => {
-    const preset = resolveIndustryPresetByMessage(currentConfig.support_text);
-    return (
-      String(currentConfig.support_text ?? "").trim() !==
-      String(INDUSTRY_MESSAGES[preset] ?? "").trim()
-    );
-  });
   const [previewSelectedTip, setPreviewSelectedTip] = useState(() =>
     resolvePreviewDefaultSelection(currentConfig.default_tip_choice),
   );
@@ -581,10 +602,6 @@ export default function TipBlockSettings() {
     setDraftConfig(cloneConfig(currentConfig));
     const preset = resolveIndustryPresetByMessage(currentConfig.support_text);
     setSelectedIndustryPreset(preset);
-    setSupportCustomized(
-      String(currentConfig.support_text ?? "").trim() !==
-        String(INDUSTRY_MESSAGES[preset] ?? "").trim(),
-    );
     setPreviewSelectedTip(resolvePreviewDefaultSelection(currentConfig.default_tip_choice));
     setPreviewCustomAmount("");
   }, [currentConfig]);
@@ -619,10 +636,6 @@ export default function TipBlockSettings() {
     setDraftConfig(cloneConfig(currentConfig));
     const preset = resolveIndustryPresetByMessage(currentConfig.support_text);
     setSelectedIndustryPreset(preset);
-    setSupportCustomized(
-      String(currentConfig.support_text ?? "").trim() !==
-        String(INDUSTRY_MESSAGES[preset] ?? "").trim(),
-    );
     setPreviewSelectedTip(resolvePreviewDefaultSelection(currentConfig.default_tip_choice));
     setPreviewCustomAmount("");
   };
@@ -631,18 +644,12 @@ export default function TipBlockSettings() {
     const presetMessage =
       INDUSTRY_MESSAGES[presetKey] ?? INDUSTRY_MESSAGES.general;
     setSelectedIndustryPreset(presetKey);
-    setSupportCustomized(false);
     updateDraft("support_text", presetMessage);
   };
 
   const handleSupportMessageChange = (nextMessage) => {
     const matchedPreset = resolveIndustryPresetByMessage(nextMessage);
-    const isCustomized =
-      String(nextMessage ?? "").trim() !==
-      String(INDUSTRY_MESSAGES[matchedPreset] ?? "").trim();
-
     setSelectedIndustryPreset(matchedPreset);
-    setSupportCustomized(isCustomized);
     updateDraft("support_text", nextMessage);
   };
 
@@ -671,14 +678,31 @@ export default function TipBlockSettings() {
                     : "Tipping is paused"}
                 </p>
               </div>
-              <input
-                id="enabled"
-                name="enabled"
-                type="checkbox"
-                checked={Boolean(draftConfig.enabled)}
-                onChange={(event) => updateDraft("enabled", event.target.checked)}
-                style={styles.toggle}
-              />
+              <label htmlFor="enabled" style={styles.toggle}>
+                <input
+                  id="enabled"
+                  name="enabled"
+                  type="checkbox"
+                  checked={Boolean(draftConfig.enabled)}
+                  onChange={(event) => updateDraft("enabled", event.target.checked)}
+                  style={styles.toggleInput}
+                />
+                <span
+                  style={
+                    draftConfig.enabled
+                      ? { ...styles.toggleTrack, ...styles.toggleTrackOn }
+                      : styles.toggleTrack
+                  }
+                >
+                  <span
+                    style={
+                      draftConfig.enabled
+                        ? { ...styles.toggleThumb, ...styles.toggleThumbOn }
+                        : styles.toggleThumb
+                    }
+                  />
+                </span>
+              </label>
             </div>
 
             <div style={{ ...styles.section, ...activeSectionsStyle }}>
@@ -775,14 +799,9 @@ export default function TipBlockSettings() {
               </div>
 
               <div style={styles.field}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <label htmlFor="support_text" style={styles.label}>
-                    Message
-                  </label>
-                  {supportCustomized ? (
-                    <span style={styles.customizedTag}>- customized</span>
-                  ) : null}
-                </div>
+                <label htmlFor="support_text" style={styles.label}>
+                  Message
+                </label>
                 <div style={styles.textareaWrap}>
                   <textarea
                     id="support_text"

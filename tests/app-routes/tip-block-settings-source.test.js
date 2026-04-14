@@ -44,7 +44,7 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
   assert.equal(routeSource.includes("Apply colors to checkout profile"), false);
   assert.equal(routeSource.includes("Support message"), true);
   assert.equal(routeSource.includes("Industry preset"), true);
-  assert.equal(routeSource.includes("- customized"), true);
+  assert.equal(routeSource.includes("- customized"), false);
   assert.equal(routeSource.includes("Support message 1"), false);
   assert.equal(routeSource.includes("textarea"), true);
   assert.equal(routeSource.includes("placeholder=\"Show your appreciation\""), false);

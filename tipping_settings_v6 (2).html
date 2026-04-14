@@ -1,0 +1,279 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.page{background:var(--color-background-tertiary);padding:2rem;min-height:100vh}
+.page-title{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.page-sub{font-size:13px;color:var(--color-text-secondary);margin-top:4px;margin-bottom:1.5rem}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start}
+.main-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.card-header-title{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.card-header-sub{font-size:12px;color:var(--color-text-secondary)}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;border-radius:99px;background:var(--color-border-secondary);transition:background .2s}
+.toggle input:checked~.toggle-track{background:#1D9E75}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--color-background-primary);transition:left .2s}
+.toggle input:checked~.toggle-thumb{left:19px}
+.section{padding:1.25rem 1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);transition:opacity .2s}
+.section.disabled{opacity:0.35;pointer-events:none}
+.section-label{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.section-hint{font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem}
+.field-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+input[type=text],input[type=number],select,textarea{width:100%;font-size:13px;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);outline:none;font-family:var(--font-sans)}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--color-border-primary);box-shadow:0 0 0 2px rgba(0,0,0,0.06)}
+textarea{resize:none;line-height:1.5}
+.input-wrap{position:relative}
+.char-count{position:absolute;right:8px;bottom:8px;font-size:11px;color:var(--color-text-tertiary);pointer-events:none}
+.num-wrap{position:relative;display:flex;align-items:center}
+.num-wrap input{padding-right:24px}
+.num-unit{position:absolute;right:10px;font-size:13px;color:var(--color-text-secondary)}
+.default-row{display:flex;align-items:center;gap:10px;margin-top:1rem;flex-wrap:wrap}
+.default-row label{font-size:12px;font-weight:500;color:var(--color-text-secondary);white-space:nowrap}
+.info-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;background:#E1F5EE;color:#0F6E56;flex-shrink:0}
+.footer{display:flex;justify-content:flex-end;gap:10px;padding:1rem 1.5rem}
+.btn-ghost{font-size:13px;padding:7px 16px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.btn-primary{font-size:13px;padding:7px 16px;border:none;border-radius:var(--border-radius-md);background:var(--color-text-primary);color:var(--color-background-primary);cursor:pointer;font-weight:500}
+.preview-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.preview-header{padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.preview-label{font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.preview-body{padding:14px}
+.preview-off{display:none;padding:2rem 14px;text-align:center;font-size:13px;color:var(--color-text-secondary)}
+.preview-title{font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.preview-msg{font-size:12px;color:var(--color-text-secondary);margin-bottom:12px;min-height:16px}
+.tip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tip-btn{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 8px;text-align:center;cursor:pointer;background:var(--color-background-primary)}
+.tip-btn.active{border:2px solid #1D9E75;background:#E1F5EE}
+.tip-pct{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.tip-btn.active .tip-pct{color:#0F6E56}
+.tip-custom-label{font-size:13px;font-weight:400;color:var(--color-text-primary)}
+.preview-total{display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-primary);font-weight:500;margin:8px 0}
+.preview-thanks{font-size:11px;color:var(--color-text-secondary)}
+.preview-note{font-size:10px;color:var(--color-text-tertiary);padding:8px 14px;border-top:0.5px solid var(--color-border-tertiary);line-height:1.4}
+.customized-tag{display:none;font-size:11px;color:#BA7517;margin-left:6px}
+.customized-tag.show{display:inline}
+</style>
+
+<div class="page">
+  <h2 class="sr-only">Tipping settings</h2>
+  <div class="page-title">Tipping</div>
+  <div class="page-sub">Edit the tip choices shown directly in checkout.</div>
+
+  <div class="layout">
+    <div>
+      <div class="main-card">
+
+        <div class="card-header">
+          <div>
+            <div class="card-header-title">Enable tipping</div>
+            <div class="card-header-sub" id="toggle-status">Tipping is active in checkout</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="enable-toggle" checked onchange="syncToggle()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+
+        <div class="section" id="s1">
+          <div class="section-label">Summary</div>
+          <div class="section-hint">Controls the title, button label, and closing note shown in checkout.</div>
+          <div class="field-row">
+            <div>
+              <div class="field-label">Title</div>
+              <input type="text" id="tip-title" value="Show your appreciation" oninput="syncTitle()">
+            </div>
+            <div>
+              <div class="field-label">Button label</div>
+              <input type="text" value="Add a tip">
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">Thank you text</div>
+            <div class="input-wrap">
+              <input type="text" id="thanks-text" value="Thank you — it means the world to us." oninput="syncThanks(this)" style="padding-right:48px">
+              <span class="char-count" id="thanks-count">38/60</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="s2">
+          <div class="section-label">Support message</div>
+          <div class="section-hint">Shown below the title in checkout. Pick a preset or write your own.</div>
+          <div class="field">
+            <div class="field-label">Industry preset</div>
+            <select id="industry-select" onchange="applyPreset(this.value)">
+              <option value="general">General / DTC</option>
+              <option value="food">Food & beverage</option>
+              <option value="handmade">Handmade / artisan</option>
+              <option value="fashion">Fashion & apparel</option>
+              <option value="subscription">Subscription box</option>
+            </select>
+          </div>
+          <div class="field">
+            <div style="display:flex;align-items:center;margin-bottom:5px">
+              <span class="field-label" style="margin-bottom:0">Message</span>
+              <span class="customized-tag" id="custom-tag">— customized</span>
+            </div>
+            <div class="input-wrap">
+              <textarea id="support-msg" rows="2" oninput="onMsgEdit()" style="padding-bottom:22px">Every tip goes directly to the people who packed your order.</textarea>
+              <span class="char-count" id="msg-count">60/80</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" id="s3">
+          <div class="section-label">Preset percentages</div>
+          <div class="section-hint">Buyers always see three percentage choices plus a custom amount.</div>
+          <div class="field-row-3">
+            <div>
+              <div class="field-label">Preset 1</div>
+              <div class="num-wrap"><input type="number" id="p1" value="10" min="1" max="99" oninput="syncPcts()"><span class="num-unit">%</span></div>
+            </div>
+            <div>
+              <div class="field-label">Preset 2</div>
+              <div class="num-wrap"><input type="number" id="p2" value="15" min="1" max="99" oninput="syncPcts()"><span class="num-unit">%</span></div>
+            </div>
+            <div>
+              <div class="field-label">Preset 3</div>
+              <div class="num-wrap"><input type="number" id="p3" value="20" min="1" max="99" oninput="syncPcts()"><span class="num-unit">%</span></div>
+            </div>
+          </div>
+          <div class="default-row">
+            <label>Default selected</label>
+            <select id="default-pct" onchange="syncDefault()">
+              <option value="0">Preset 1 (10%)</option>
+              <option value="1" selected>Preset 2 (15%)</option>
+              <option value="2">Preset 3 (20%)</option>
+              <option value="3">None</option>
+            </select>
+            <span class="info-badge">
+              <span style="width:5px;height:5px;border-radius:50%;background:#1D9E75;display:inline-block"></span>
+              15% converts best
+            </span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <button class="btn-ghost">Discard</button>
+          <button class="btn-primary">Save settings</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="preview-label">Live preview</span>
+        </div>
+        <div class="preview-off" id="preview-off">Tipping is disabled.</div>
+        <div class="preview-body" id="preview-body">
+          <div class="preview-title" id="prev-title">Show your appreciation</div>
+          <div class="preview-msg" id="prev-msg">Every tip goes directly to the people who packed your order.</div>
+          <div class="tip-grid" id="tip-grid"></div>
+          <div class="preview-total"><span>Tip</span><span id="prev-tip-amt">15%</span></div>
+          <div class="preview-thanks" id="prev-thanks">Thank you — it means the world to us.</div>
+        </div>
+        <div class="preview-note">Interactive simulation only. Does not write to checkout.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var presets=[10,15,20];
+var selectedPreset=1;
+
+var industryMessages={
+  general:'Every tip goes directly to the people who packed your order.',
+  food:'Tips support the chefs behind every order.',
+  handmade:'Each item is made by hand, with love. Tips help us keep going.',
+  fashion:'Tips help our packing team do more.',
+  subscription:'Tips go to the team curating your box every month.'
+};
+
+function syncToggle(){
+  var on=document.getElementById('enable-toggle').checked;
+  document.getElementById('toggle-status').textContent=on?'Tipping is active in checkout':'Tipping is paused';
+  ['s1','s2','s3'].forEach(function(id){document.getElementById(id).classList.toggle('disabled',!on)});
+  document.getElementById('preview-body').style.display=on?'block':'none';
+  document.getElementById('preview-off').style.display=on?'none':'block';
+}
+
+function applyPreset(val){
+  var msg=industryMessages[val];
+  document.getElementById('support-msg').value=msg;
+  document.getElementById('prev-msg').textContent=msg;
+  document.getElementById('custom-tag').classList.remove('show');
+  countMsg();
+}
+
+function onMsgEdit(){
+  document.getElementById('prev-msg').textContent=document.getElementById('support-msg').value;
+  document.getElementById('custom-tag').classList.add('show');
+  countMsg();
+}
+
+function countMsg(){
+  var len=document.getElementById('support-msg').value.length;
+  var el=document.getElementById('msg-count');
+  el.textContent=len+'/80';
+  el.style.color=len>80?'var(--color-text-danger)':'var(--color-text-tertiary)';
+}
+
+function syncTitle(){
+  document.getElementById('prev-title').textContent=document.getElementById('tip-title').value||'Tip';
+}
+
+function syncThanks(el){
+  document.getElementById('thanks-count').textContent=el.value.length+'/60';
+  document.getElementById('prev-thanks').textContent=el.value;
+}
+
+function syncPcts(){
+  presets=[
+    parseInt(document.getElementById('p1').value)||10,
+    parseInt(document.getElementById('p2').value)||15,
+    parseInt(document.getElementById('p3').value)||20
+  ];
+  var sel=document.getElementById('default-pct');
+  sel.options[0].text='Preset 1 ('+presets[0]+'%)';
+  sel.options[1].text='Preset 2 ('+presets[1]+'%)';
+  sel.options[2].text='Preset 3 ('+presets[2]+'%)';
+  renderTipGrid();
+}
+
+function syncDefault(){
+  selectedPreset=parseInt(document.getElementById('default-pct').value);
+  renderTipGrid();
+}
+
+function renderTipGrid(){
+  var grid=document.getElementById('tip-grid');
+  var html='';
+  for(var i=0;i<3;i++){
+    var pct=presets[i];
+    var active=selectedPreset===i?'active':'';
+    html+='<div class="tip-btn '+active+'" onclick="selectTip('+i+')">'
+      +'<div class="tip-pct">'+pct+'%</div>'
+      +'</div>';
+  }
+  html+='<div class="tip-btn'+(selectedPreset===3?' active':'')+'" onclick="selectTip(3)">'
+    +'<div class="tip-custom-label">Custom</div>'
+    +'</div>';
+  grid.innerHTML=html;
+  document.getElementById('prev-tip-amt').textContent=selectedPreset<3?presets[selectedPreset]+'%':'—';
+}
+
+function selectTip(idx){
+  selectedPreset=idx;
+  document.getElementById('default-pct').value=idx<3?idx:3;
+  renderTipGrid();
+}
+
+renderTipGrid();
+</script>

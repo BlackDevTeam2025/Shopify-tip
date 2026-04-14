@@ -18,7 +18,7 @@ test("SnapTip production config uses the snaptip.tech domain", () => {
     true,
   );
   assert.equal(
-    config.includes('redirect_urls = [ "https://snaptip.tech/api/auth" ]'),
+    config.includes('redirect_urls = [ "https://snaptip.tech/auth/callback" ]'),
     true,
   );
 });
