@@ -49,6 +49,7 @@ test("checkout extension source keeps the form visible and uses the custom-only 
   assert.equal(checkoutSource.includes("cta_label"), true);
   assert.equal(checkoutSource.includes("<s-press-button"), true);
   assert.equal(checkoutSource.includes("autoSyncKeyRef"), true);
+  assert.equal(checkoutSource.includes("autoApplyDefaultKeyRef"), true);
   assert.equal(
     checkoutSource.includes(
       "Unable to keep the tip in sync with the current cart",
@@ -57,4 +58,9 @@ test("checkout extension source keeps the form visible and uses the custom-only 
   );
   assert.equal(checkoutSource.includes("savedTipMode !== \"percentage\""), true);
   assert.equal(checkoutSource.includes("savedTipAmount, nextTipAmount"), true);
+  assert.equal(checkoutSource.includes("Tip line saved."), false);
+  assert.equal(checkoutSource.includes('tone="success"'), false);
+  assert.equal(checkoutSource.includes("choice.key === selectedTip && existingTipLine"), true);
+  assert.equal(checkoutSource.includes("setSelectedTip(\"\")"), true);
+  assert.equal(checkoutSource.includes("if (!existingTipLine) {\n      return;\n    }\n\n    const nextSelection = getInitialSelection"), true);
 });

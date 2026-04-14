@@ -243,9 +243,9 @@ function TipBlockExtension() {
     initialSelection.customAmount,
   );
   const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const autoSyncKeyRef = useRef("");
+  const autoApplyDefaultKeyRef = useRef("");
   const choices = useMemo(
     () =>
       buildTipChoices({
@@ -259,6 +259,10 @@ function TipBlockExtension() {
   const visibleSupportMessage = settings.support_text;
 
   useEffect(() => {
+    if (!existingTipLine) {
+      return;
+    }
+
     const nextSelection = getInitialSelection({
       existingTipLine,
       customAmountEnabled: settings.custom_amount_enabled,
@@ -335,7 +339,6 @@ function TipBlockExtension() {
     customValue = customAmount,
   } = {}) => {
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     const customChoiceSelected = choiceKey === "custom";
     const customValueProvided = hasCustomAmountInput(customValue);
@@ -430,10 +433,6 @@ function TipBlockExtension() {
       if (result?.type === "error") {
         throw new Error(result.message ?? "Unknown error");
       }
-
-      setSuccessMessage(
-        "Tip line saved. Shopify Plus pricing should update automatically.",
-      );
     } catch (error) {
       setErrorMessage(
         `Unable to apply tip: ${error?.message ?? "Unknown error"}`,
@@ -445,10 +444,10 @@ function TipBlockExtension() {
 
   const handleRemoveTip = async () => {
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     if (!existingTipLine) {
-      setSuccessMessage("Tip removed from the checkout.");
+      setSelectedTip("");
+      setCustomAmount("");
       return;
     }
 
@@ -473,11 +472,8 @@ function TipBlockExtension() {
         throw new Error(result.message ?? "Unknown error");
       }
 
-      setSelectedTip(
-        getDefaultTipSelection(percentages, settings.default_tip_choice),
-      );
+      setSelectedTip("");
       setCustomAmount("");
-      setSuccessMessage("Tip removed from the checkout.");
     } catch (error) {
       setErrorMessage(
         `Unable to remove tip: ${error?.message ?? "Unknown error"}`,
@@ -486,6 +482,52 @@ function TipBlockExtension() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      isLoading ||
+      existingTipLine ||
+      isCustomSelected ||
+      !selectedTip ||
+      subtotal <= 0 ||
+      !settings.transform_active ||
+      !tipVariantId ||
+      typeof applyCartLinesChange !== "function" ||
+      !canAddTipLine(instructions)
+    ) {
+      return;
+    }
+
+    const percentage = Number(selectedTip);
+
+    if (!Number.isFinite(percentage) || !percentages.includes(percentage)) {
+      return;
+    }
+
+    const autoApplyKey = `${tipVariantId}:${percentage}:${subtotal.toFixed(2)}`;
+
+    if (autoApplyDefaultKeyRef.current === autoApplyKey) {
+      return;
+    }
+
+    autoApplyDefaultKeyRef.current = autoApplyKey;
+
+    void handleApplyTip({
+      choiceKey: selectedTip,
+      customValue: "",
+    });
+  }, [
+    applyCartLinesChange,
+    existingTipLine,
+    instructions,
+    isCustomSelected,
+    isLoading,
+    percentages,
+    selectedTip,
+    settings.transform_active,
+    subtotal,
+    tipVariantId,
+  ]);
 
   const handlePrimaryAction = async () => {
     await handleApplyTip();
@@ -500,7 +542,6 @@ function TipBlockExtension() {
 
     setCustomAmount(formatCustomAmountInput(nextValue));
     setErrorMessage(null);
-    setSuccessMessage(null);
   };
 
   useEffect(() => {
@@ -612,9 +653,16 @@ function TipBlockExtension() {
                   return;
                 }
 
-                setSelectedTip(choice.key);
                 setErrorMessage(null);
-                setSuccessMessage(null);
+
+                if (choice.key === selectedTip && existingTipLine) {
+                  setSelectedTip("");
+                  setCustomAmount("");
+                  void handleRemoveTip();
+                  return;
+                }
+
+                setSelectedTip(choice.key);
 
                 if (choice.key === "custom") {
                   return;
@@ -646,7 +694,6 @@ function TipBlockExtension() {
               onChange={(event) => {
                 setCustomAmount(event.currentTarget.value);
                 setErrorMessage(null);
-                setSuccessMessage(null);
               }}
               label="Custom tip"
               accessory={
@@ -708,7 +755,6 @@ function TipBlockExtension() {
         )}
 
         {errorMessage && <s-banner tone="critical">{errorMessage}</s-banner>}
-        {successMessage && <s-banner tone="success">{successMessage}</s-banner>}
       </s-grid>
     </s-stack>
   );
