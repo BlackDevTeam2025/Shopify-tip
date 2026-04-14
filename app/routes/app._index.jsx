@@ -47,7 +47,7 @@ const styles = {
     fontSize: "22px",
     lineHeight: 1.2,
     letterSpacing: 0,
-    fontWeight: 500,
+    fontWeight: 600,
     color: "#0f172a",
   },
   subtitle: {
@@ -245,12 +245,6 @@ const styles = {
     lineHeight: 1.2,
     fontWeight: 500,
     color: "#0f172a",
-  },
-  chartFootnote: {
-    margin: 0,
-    fontSize: "10px",
-    lineHeight: 1.4,
-    color: "#9ca3af",
   },
 };
 
@@ -686,10 +680,6 @@ export default function Index() {
               </div>
             )}
           </div>
-
-          <p style={styles.chartFootnote}>
-            Today&apos;s data can be partial and may appear lower than usual.
-          </p>
         </section>
       </div>
     </div>

@@ -26,7 +26,7 @@ const responsiveStyles = `
   .tip-settings-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 20px;
+    gap: 24px;
     align-items: start;
   }
 
@@ -51,9 +51,9 @@ const styles = {
   page: {
     minHeight: "100%",
     background: "#f5f7fa",
-    padding: "20px 16px 32px",
+    padding: "22px 18px 36px",
     display: "grid",
-    gap: "20px",
+    gap: "24px",
     maxWidth: "100%",
     margin: 0,
     width: "100%",
@@ -64,7 +64,7 @@ const styles = {
     fontSize: "22px",
     lineHeight: 1.2,
     letterSpacing: 0,
-    fontWeight: 500,
+    fontWeight: 600,
     color: "#111827",
   },
   pageSub: {
@@ -86,7 +86,7 @@ const styles = {
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: "14px",
-    padding: "18px 22px",
+    padding: "22px 28px",
     borderBottom: "1px solid #eef2f7",
   },
   cardHeaderTitle: {
@@ -144,10 +144,10 @@ const styles = {
     left: "22px",
   },
   section: {
-    padding: "20px 24px",
+    padding: "24px 28px",
     borderBottom: "1px solid #eef2f7",
     display: "grid",
-    gap: "12px",
+    gap: "14px",
     transition: "opacity 0.18s ease",
   },
   sectionDisabled: {
@@ -321,7 +321,7 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     flexWrap: "wrap",
-    padding: "14px 22px",
+    padding: "16px 28px",
     background: "#fafafa",
   },
   actions: {
