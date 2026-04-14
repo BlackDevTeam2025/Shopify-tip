@@ -12,7 +12,7 @@ import {
 } from "../tip-preview.utils.js";
 
 const uiFontFamily =
-  '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif';
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const INDUSTRY_MESSAGES = {
   general: "Every tip goes directly to the people who packed your order.",

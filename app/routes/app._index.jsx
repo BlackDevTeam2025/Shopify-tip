@@ -17,13 +17,15 @@ const responsiveStyles = `
   }
 `;
 
+const uiFontFamily =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 const styles = {
   page: {
     minHeight: "100%",
     background: "#f5f7fa",
     padding: "32px 32px 40px",
-    fontFamily:
-      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+    fontFamily: uiFontFamily,
   },
   container: {
     maxWidth: "none",
@@ -76,8 +78,7 @@ const styles = {
     fontSize: "13px",
     lineHeight: 1.2,
     fontWeight: 400,
-    fontFamily:
-      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+    fontFamily: uiFontFamily,
   },
   dateTriggerLeft: {
     display: "inline-flex",
@@ -111,8 +112,7 @@ const styles = {
     fontSize: "12px",
     lineHeight: 1.3,
     fontWeight: 400,
-    fontFamily:
-      '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
+    fontFamily: uiFontFamily,
   },
   dateOptionActive: {
     color: "#0f6e56",
