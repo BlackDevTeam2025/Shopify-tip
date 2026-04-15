@@ -122,7 +122,10 @@ const styles = {
   kpiGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    width: "100%",
+    maxWidth: "860px",
     gap: "18px",
+    justifySelf: "start",
   },
   kpiCard: {
     borderRadius: "18px",
