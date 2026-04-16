@@ -23,7 +23,7 @@ test("SnapTip production config uses the snaptip.tech domain", () => {
   );
 });
 
-test("SnapTip production config declares only baseline webhooks before protected-data approval", () => {
+test("SnapTip production config declares baseline and compliance webhooks", () => {
   const config = readProjectFile("shopify.app.snaptip.toml");
 
   for (const topic of [
@@ -32,6 +32,35 @@ test("SnapTip production config declares only baseline webhooks before protected
     'topics = [ "app_subscriptions/update" ]',
   ]) {
     assert.equal(config.includes(topic), true);
+  }
+
+  assert.equal(
+    config.includes(
+      'compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]',
+    ),
+    true,
+  );
+  assert.equal(config.includes('uri = "/webhooks/compliance"'), true);
+});
+
+test("SnapTip production config keeps only scopes used by production flows", () => {
+  const config = readProjectFile("shopify.app.snaptip.toml");
+
+  for (const scope of [
+    "read_orders",
+    "read_publications",
+    "write_cart_transforms",
+    "write_products",
+    "write_publications",
+  ]) {
+    assert.equal(config.includes(scope), true);
+  }
+
+  for (const removedScope of [
+    "write_metaobject_definitions",
+    "write_metaobjects",
+  ]) {
+    assert.equal(config.includes(removedScope), false);
   }
 });
 
@@ -48,26 +77,22 @@ test("env example is aligned with SnapTip managed pricing defaults", () => {
   );
 });
 
-test("compliance webhook routes exist for App Store review", () => {
-  for (const routePath of [
-    "app/routes/webhooks.customers.data_request.jsx",
-    "app/routes/webhooks.customers.redact.jsx",
-    "app/routes/webhooks.shop.redact.jsx",
-  ]) {
-    assert.equal(fs.existsSync(path.join(projectRoot, routePath)), true);
-  }
+test("compliance webhook route exists for App Store review", () => {
+  const routePath = "app/routes/webhooks.compliance.jsx";
+  const source = readProjectFile(routePath);
+
+  assert.equal(fs.existsSync(path.join(projectRoot, routePath)), true);
+  assert.equal(source.includes("authenticate.webhook(request)"), true);
+  assert.equal(source.includes('status: 401'), true);
 });
 
-test("protected compliance webhook topics are not declared before approval", () => {
+test("protected order metrics topics stay out of production config until protected customer data is approved", () => {
   const config = readProjectFile("shopify.app.snaptip.toml");
 
   for (const topic of [
     'topics = [ "orders/paid" ]',
     'topics = [ "refunds/create" ]',
     'topics = [ "orders/cancelled" ]',
-    'topics = [ "customers/data_request" ]',
-    'topics = [ "customers/redact" ]',
-    'topics = [ "shop/redact" ]',
   ]) {
     assert.equal(config.includes(topic), false);
   }

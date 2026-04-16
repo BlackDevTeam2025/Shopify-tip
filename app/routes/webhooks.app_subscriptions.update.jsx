@@ -7,6 +7,12 @@ import { syncTipConfigEnabled } from "../tip-config.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
 import { loadShopEligibility } from "../billing/shop-eligibility.server.js";
 
+export const loader = async () =>
+  new Response(null, {
+    status: 401,
+    statusText: "Unauthorized",
+  });
+
 export const action = async ({ request }) => {
   const { payload, shop, topic } = await authenticate.webhook(request);
 

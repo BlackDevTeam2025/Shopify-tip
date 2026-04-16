@@ -2,6 +2,12 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { clearShopLicense } from "../billing/license.server";
 
+export const loader = async () =>
+  new Response(null, {
+    status: 401,
+    statusText: "Unauthorized",
+  });
+
 export const action = async ({ request }) => {
   const { shop, session, topic } = await authenticate.webhook(request);
 
