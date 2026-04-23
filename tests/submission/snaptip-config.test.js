@@ -10,11 +10,11 @@ function readProjectFile(relativePath) {
 }
 
 test("SnapTip production config uses the snaptip.tech domain", () => {
-  const config = readProjectFile("shopify.app.snaptip.toml");
+  const config = readProjectFile("shopify.app.toml");
 
   assert.equal(config.includes("https://example.com"), false);
   assert.equal(
-    config.includes('application_url = "https://snaptip.tech"'),
+    config.includes('application_url = "https://snaptip.tech/auth/start"'),
     true,
   );
   assert.equal(
@@ -24,7 +24,7 @@ test("SnapTip production config uses the snaptip.tech domain", () => {
 });
 
 test("SnapTip production config declares baseline and compliance webhooks", () => {
-  const config = readProjectFile("shopify.app.snaptip.toml");
+  const config = readProjectFile("shopify.app.toml");
 
   for (const topic of [
     'topics = [ "app/uninstalled" ]',
@@ -40,11 +40,14 @@ test("SnapTip production config declares baseline and compliance webhooks", () =
     ),
     true,
   );
-  assert.equal(config.includes('uri = "/webhooks/compliance"'), true);
+  assert.equal(
+    config.includes('uri = "https://snaptip.tech/webhooks/compliance"'),
+    true,
+  );
 });
 
 test("SnapTip production config keeps only scopes used by production flows", () => {
-  const config = readProjectFile("shopify.app.snaptip.toml");
+  const config = readProjectFile("shopify.app.toml");
 
   for (const scope of [
     "read_orders",
@@ -87,7 +90,7 @@ test("compliance webhook route exists for App Store review", () => {
 });
 
 test("protected order metrics topics stay out of production config until protected customer data is approved", () => {
-  const config = readProjectFile("shopify.app.snaptip.toml");
+  const config = readProjectFile("shopify.app.toml");
 
   for (const topic of [
     'topics = [ "orders/paid" ]',

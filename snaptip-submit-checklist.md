@@ -2,7 +2,7 @@
 
 ## Production config
 
-- Confirm [shopify.app.snaptip.toml](/Users/blackpham/Documents/Shopify-tip/shopify.app.snaptip.toml) uses `https://snaptip.tech`
+- Confirm [shopify.app.toml](/Users/blackpham/Documents/Shopify-tip/shopify.app.toml) uses `https://snaptip.tech/auth/start`
 - Confirm redirect URL is `https://snaptip.tech/auth/callback`
 - Keep production scopes limited to:
   - `read_orders`
@@ -20,7 +20,7 @@
 
 ## Deploy sequence
 
-1. Run `shopify app deploy --config shopify.app.snaptip.toml`
+1. Run `shopify app deploy`
 2. Deploy production app code to `https://snaptip.tech`
 3. Reinstall the app on a clean store
 4. Verify auth lands inside the embedded app without loops
