@@ -32,6 +32,29 @@ Press P to open the URL to your app. Once you click install, you can start devel
 
 Local development is powered by [the Shopify CLI](https://shopify.dev/docs/apps/tools/cli). It logs into your account, connects to an app, provides environment variables, updates remote config, creates a tunnel and provides commands to generate extensions.
 
+## SnapTip testing lanes
+
+SnapTip uses two separate testing lanes on purpose:
+
+### Lane 1: local app development
+- Run `shopify app dev` to test embedded admin UI, checkout extensions, settings, and local app behavior.
+- This lane is for feature development inside the Shopify app repo only.
+- Do not expect the production admin at `https://snaptip.tech/admin` to receive installation rows from this lane.
+
+### Lane 2: production embedded app install tracking
+- SnapTip production app UI and OAuth run from:
+  - `https://app.snaptip.tech`
+  - `https://app.snaptip.tech/auth/callback`
+- The embedded app syncs installation rows to the landing/admin backend through:
+  - `https://snaptip.tech/internal/installations/shopify`
+- Use this lane when testing `Installations`, monthly tip totals, and bulk email in the landing/admin backend.
+- If you need Admin to receive a Shopify install row, install the production app on a dev store and open the embedded app once after installation.
+
+### Important warning
+- Running `shopify app dev` can temporarily update the remote app URL to the CLI tunnel.
+- After that happens, production installs may stop opening `https://app.snaptip.tech`.
+- Before testing the production install lane again, redeploy the Shopify app config so the production app URL and redirect URL are restored.
+
 ### Authenticating and querying data
 
 To authenticate and query data you can use the `shopify` const that is exported from `/app/shopify.server.js`:
@@ -235,5 +258,3 @@ Shopify:
 Internationalization:
 
 - [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
-#   S h o p i f y - t i p  
- 

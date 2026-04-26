@@ -8,9 +8,12 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { appendEmbeddedSearch } from "../embedded-app-url.js";
+import { syncLandingInstallation } from "../landing-install-sync.server";
 
 export const loader = async ({ request }) => {
-  const { isLicenseRoute } = await authenticateBillingRoute(request);
+  const billingContext = await authenticateBillingRoute(request);
+  const { admin, session, isLicenseRoute } = billingContext;
+  await syncLandingInstallation({ admin, session, source: "app_loader" });
 
   // eslint-disable-next-line no-undef
   return {

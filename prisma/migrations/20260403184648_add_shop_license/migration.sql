@@ -1,10 +1,11 @@
 -- CreateTable
 CREATE TABLE "ShopLicense" (
-    "shop" TEXT NOT NULL PRIMARY KEY,
+    "shop" TEXT NOT NULL,
     "licenseStatus" TEXT NOT NULL,
     "purchaseId" TEXT,
     "purchaseName" TEXT,
     "isTest" BOOLEAN NOT NULL DEFAULT false,
-    "activatedAt" DATETIME,
-    "updatedAt" DATETIME NOT NULL
+    "activatedAt" TIMESTAMP(3),
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "ShopLicense_pkey" PRIMARY KEY ("shop")
 );

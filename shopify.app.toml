@@ -2,7 +2,7 @@
 
 client_id = "4e3f8a22fc4e05b7bc299b8f92a03b45"
 name = "SnapTip"
-application_url = "https://snaptip.tech/auth/start"
+application_url = "https://app.snaptip.tech"
 embedded = true
 
 [build]
@@ -32,4 +32,4 @@ api_version = "2026-07"
 scopes = "read_orders,read_publications,write_cart_transforms,write_products,write_publications"
 
 [auth]
-redirect_urls = [ "https://snaptip.tech/auth/callback" ]
+redirect_urls = [ "https://app.snaptip.tech/auth/callback" ]

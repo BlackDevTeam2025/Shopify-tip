@@ -1,27 +1,29 @@
 -- CreateTable
 CREATE TABLE "TipMetric" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "shop" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "currency" TEXT NOT NULL,
-    "tipAmount" REAL NOT NULL,
-    "refundedAmount" REAL NOT NULL DEFAULT 0,
-    "netAmount" REAL NOT NULL,
+    "tipAmount" DOUBLE PRECISION NOT NULL,
+    "refundedAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "netAmount" DOUBLE PRECISION NOT NULL,
     "status" TEXT NOT NULL,
-    "paidAt" DATETIME,
-    "cancelledAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "paidAt" TIMESTAMP(3),
+    "cancelledAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "TipMetric_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "TipMetricRefundEvent" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "shop" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "refundId" TEXT NOT NULL,
-    "tipAmount" REAL NOT NULL DEFAULT 0,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "tipAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "TipMetricRefundEvent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
