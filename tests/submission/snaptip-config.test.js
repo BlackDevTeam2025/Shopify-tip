@@ -9,16 +9,16 @@ function readProjectFile(relativePath) {
   return fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
 }
 
-test("SnapTip production config uses the snaptip.tech domain", () => {
+test("SnapTip production config uses the app.snaptip.tech app domain", () => {
   const config = readProjectFile("shopify.app.toml");
 
   assert.equal(config.includes("https://example.com"), false);
   assert.equal(
-    config.includes('application_url = "https://snaptip.tech/auth/start"'),
+    config.includes('application_url = "https://app.snaptip.tech"'),
     true,
   );
   assert.equal(
-    config.includes('redirect_urls = [ "https://snaptip.tech/auth/callback" ]'),
+    config.includes('redirect_urls = [ "https://app.snaptip.tech/auth/callback" ]'),
     true,
   );
 });
@@ -71,7 +71,7 @@ test("env example is aligned with SnapTip managed pricing defaults", () => {
   const envExample = readProjectFile(".env.example");
 
   assert.equal(
-    envExample.includes("SHOPIFY_APP_URL=https://snaptip.tech"),
+    envExample.includes("SHOPIFY_APP_URL=https://app.snaptip.tech"),
     true,
   );
   assert.equal(
