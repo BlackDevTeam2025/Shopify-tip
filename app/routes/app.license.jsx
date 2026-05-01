@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
+import { getTipRuntimeEnabled } from "../billing/access-policy.server.js";
 import {
   getManagedPricingDetails,
   getManagedPricingUrl,
@@ -34,8 +35,12 @@ function throwEmbeddedRedirect(adminContext, url) {
 export const loader = async ({ request }) => {
   const adminContext = await authenticateBillingRoute(request);
   const { licenseState, session, shopEligibility, admin } = adminContext;
+  const runtimeEnabled = getTipRuntimeEnabled({
+    shopEligibility,
+    licenseActive: isLicenseActive(licenseState),
+  });
 
-  if (shopEligibility.eligible && isLicenseActive(licenseState)) {
+  if (runtimeEnabled) {
     throwEmbeddedRedirect(adminContext, "/app");
   }
 

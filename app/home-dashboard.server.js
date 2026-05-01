@@ -180,22 +180,23 @@ export async function loadHomeDashboardData({
   return {
     header: {
       storeName: headerJson.data?.shop?.name ?? "Store",
-      readinessLabel:
-        !shopEligibility?.eligible || !licenseActive
-          ? "Home - Attention"
-          : "Home - Ready",
+      readinessLabel: runtimeEnabled ? "Home - Ready" : "Home - Attention",
       subtitle: "Track tip revenue and checkout performance in one place.",
     },
     license: {
       title:
         licenseState?.licenseStatus === "bypass"
           ? "Development Bypass"
-          : licenseActive
+          : runtimeEnabled && shopEligibility?.isDevStore && !licenseActive
+            ? "Development store"
+            : licenseActive
             ? "Active"
             : "Not active",
-      status: licenseActive ? "ready" : "blocked",
-      message: licenseActive
-        ? "App access is unlocked for this store."
+      status: runtimeEnabled ? "ready" : "blocked",
+      message: runtimeEnabled
+        ? shopEligibility?.isDevStore && !licenseActive
+          ? "Partner development store access is enabled without billing."
+          : "App access is unlocked for this store."
         : "The store must unlock the app before tip checkout can run.",
     },
     tipMetrics: {

@@ -41,6 +41,7 @@ test("buildTipRuntimeConfig migrates legacy fields into the compact runtime shap
 
   assert.deepEqual(runtimeConfig, {
     enabled: true,
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: false,
@@ -75,6 +76,7 @@ test("buildTipConfigFromFormData normalizes the admin settings payload", () => {
 
   assert.deepEqual(buildTipConfigFromFormData(formData), {
     enabled: true,
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -139,6 +141,7 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
     needsSync: true,
     config: {
       enabled: true,
+      runtime_enabled: true,
       plus_only: true,
       transform_active: false,
       custom_amount_enabled: false,
@@ -162,6 +165,7 @@ test("getTipConfigSyncPayload marks legacy stored config for migration", () => {
 test("getTipConfigSyncPayload skips sync when stored config already matches the runtime shape", () => {
   const storedConfig = {
     enabled: true,
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -194,6 +198,7 @@ test("getTipConfigSyncPayload skips sync when stored config already matches the 
 test("getDefaultTipConfig uses the compact admin defaults", () => {
   assert.deepEqual(getDefaultTipConfig(), {
     enabled: true,
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -210,6 +215,36 @@ test("getDefaultTipConfig uses the compact admin defaults", () => {
     thank_you_text: DEFAULT_THANK_YOU_TEXT,
     cta_label: DEFAULT_CTA_LABEL,
     tip_percentages: DEFAULT_TIP_PERCENTAGES,
+  });
+});
+
+test("getTipConfigSyncPayload restores legacy disabled runtime configs once runtime access is available", () => {
+  const payload = getTipConfigSyncPayload({
+    storedValue:
+      '{"enabled":false,"tip_percentages":"10,15,20","tip_variant_id":"44334137737309"}',
+    enabled: true,
+  });
+
+  assert.equal(payload.needsSync, true);
+  assert.deepEqual(payload.config, {
+    enabled: true,
+    runtime_enabled: true,
+    plus_only: true,
+    transform_active: false,
+    custom_amount_enabled: true,
+    hide_until_opt_in: false,
+    default_tip_choice: DEFAULT_DEFAULT_TIP_CHOICE,
+    tip_product_id: "",
+    tip_variant_id: "gid://shopify/ProductVariant/44334137737309",
+    tip_infrastructure_status: DEFAULT_TIP_INFRASTRUCTURE_STATUS,
+    tip_infrastructure_error: "",
+    tip_metrics_enabled: DEFAULT_TIP_METRICS_ENABLED,
+    tip_metrics_window_days: DEFAULT_TIP_METRICS_WINDOW_DAYS,
+    heading: DEFAULT_HEADING,
+    support_text: DEFAULT_SUPPORT_TEXT,
+    thank_you_text: DEFAULT_THANK_YOU_TEXT,
+    cta_label: DEFAULT_CTA_LABEL,
+    tip_percentages: "10,15,20",
   });
 });
 
@@ -333,6 +368,10 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
   assert.equal(result.synced, true);
   assert.equal(calls.length, 7);
   assert.match(calls[6].options.variables.input[0].value, /"enabled":true/);
+  assert.match(
+    calls[6].options.variables.input[0].value,
+    /"runtime_enabled":true/,
+  );
   assert.match(
     calls[6].options.variables.input[0].value,
     /"tip_product_id":"gid:\/\/shopify\/Product\/1"/,

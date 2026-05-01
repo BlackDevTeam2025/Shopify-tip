@@ -5,6 +5,7 @@ import {
 } from "../billing/license.server.js";
 import { syncTipConfigEnabled } from "../tip-config.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
+import { getTipRuntimeEnabled } from "../billing/access-policy.server.js";
 import { loadShopEligibility } from "../billing/shop-eligibility.server.js";
 
 export const loader = async () =>
@@ -26,8 +27,10 @@ export const action = async ({ request }) => {
       admin,
     });
     const shopEligibility = await loadShopEligibility(admin);
-    const runtimeEnabled =
-      shopEligibility.eligible && isLicenseActive(licenseState);
+    const runtimeEnabled = getTipRuntimeEnabled({
+      shopEligibility,
+      licenseActive: isLicenseActive(licenseState),
+    });
     const transformStatus = runtimeEnabled
       ? await ensureTipCartTransform(admin)
       : { active: false };

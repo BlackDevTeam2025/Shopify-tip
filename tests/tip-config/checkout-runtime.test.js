@@ -78,3 +78,19 @@ test("runtime config migrates legacy fields into the new widget shape", () => {
   });
   assert.equal(DEFAULT_TIP_PERCENTAGES, "10,15,20");
 });
+
+test("runtime config stays hidden when merchant enabled remains on but runtime access is off", () => {
+  const config = getTipRuntimeConfigFromAppMetafields([
+    {
+      target: { type: "shop", id: "gid://shopify/Shop/1" },
+      metafield: {
+        namespace: "tip_block_settings",
+        key: "config",
+        value:
+          '{"enabled":true,"runtime_enabled":false,"plus_only":true,"transform_active":false,"custom_amount_enabled":true,"tip_variant_id":"","support_text":"a","thank_you_text":"c","tip_percentages":"10,15,20"}',
+      },
+    },
+  ]);
+
+  assert.equal(config?.enabled, false);
+});

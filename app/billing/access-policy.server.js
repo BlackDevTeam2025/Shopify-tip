@@ -11,7 +11,10 @@ export function getBillingRouteAccessDecision({
     };
   }
 
-  if (!canAccessWithoutLicense && !licenseActive) {
+  if (
+    !canAccessWithoutLicense &&
+    !getTipRuntimeEnabled({ shopEligibility, licenseActive })
+  ) {
     return {
       redirectTo: "/app/license",
       reason: "license_required",
@@ -28,5 +31,8 @@ export function getTipRuntimeEnabled({
   shopEligibility,
   licenseActive = false,
 }) {
-  return Boolean(shopEligibility?.eligible && licenseActive);
+  return Boolean(
+    shopEligibility?.eligible &&
+      (licenseActive || shopEligibility?.isDevStore === true),
+  );
 }

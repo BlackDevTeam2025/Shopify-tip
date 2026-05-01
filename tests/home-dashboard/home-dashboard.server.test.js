@@ -191,6 +191,90 @@ test("loadHomeDashboardData surfaces blocked store state and missing scopes with
   assert.equal(dashboard.tipMetrics.trend.length, 60);
 });
 
+test("loadHomeDashboardData keeps development stores ready even when the legacy config was runtime-disabled", async () => {
+  const admin = createAdmin((query) => {
+    if (query.includes("query GetTipBlockConfig")) {
+      return {
+        data: {
+          shop: {
+            id: "gid://shopify/Shop/1",
+            metafield: {
+              value: JSON.stringify({
+                enabled: false,
+                plus_only: true,
+                transform_active: false,
+                custom_amount_enabled: true,
+                hide_until_opt_in: false,
+                default_tip_choice: "preset_2",
+                tip_product_id: "",
+                tip_variant_id: "",
+                tip_infrastructure_status: "pending",
+                tip_infrastructure_error: "",
+                heading: "Add tip",
+                support_text: "Show your support for the team.",
+                thank_you_text: "THANK YOU, WE APPRECIATE IT.",
+                cta_label: "Add tip",
+                tip_percentages: "10,15,20",
+              }),
+            },
+          },
+        },
+      };
+    }
+
+    if (query.includes("query HomeDashboardHeader")) {
+      return {
+        data: {
+          shop: {
+            name: "Dev store",
+          },
+          ordersCount: {
+            count: 0,
+          },
+        },
+      };
+    }
+
+    if (query.includes("query HomeDashboardPreviousOrders")) {
+      return {
+        data: {
+          ordersCount: {
+            count: 0,
+          },
+        },
+      };
+    }
+
+    throw new Error(`Unexpected query: ${query}`);
+  });
+
+  const dashboard = await loadHomeDashboardData({
+    admin,
+    shop: "dev-shop.myshopify.com",
+    licenseState: {
+      licenseStatus: "none",
+    },
+    shopEligibility: {
+      eligible: true,
+      isDevStore: true,
+      publicDisplayName: "Developer Preview",
+    },
+    metricsDbClient: {
+      tipMetric: {
+        findMany: async () => [],
+      },
+    },
+  });
+
+  assert.equal(dashboard.header.readinessLabel, "Home - Ready");
+  assert.equal(dashboard.license.status, "ready");
+  assert.equal(dashboard.license.title, "Development store");
+  assert.equal(
+    dashboard.license.message,
+    "Partner development store access is enabled without billing.",
+  );
+});
+
 test("loadHomeDashboardData honors a supported dashboard range override", async () => {
   const admin = createAdmin((query) => {
     if (query.includes("query GetTipBlockConfig")) {

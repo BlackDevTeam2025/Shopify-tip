@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
+import { getTipRuntimeEnabled } from "../billing/access-policy.server.js";
 import { authenticateBillingRoute } from "../billing/gate.server";
 import { isLicenseActive } from "../billing/license.server.js";
 import { ensureTipCartTransform } from "../cart-transform.server.js";
@@ -502,14 +503,18 @@ function getTipRowPreviewValue({
 export const loader = async ({ request }) => {
   const { buildTipRuntimeConfig, loadTipConfig, saveTipConfig } =
     await import("../tip-config.server.js");
-  const { admin, licenseState, session } =
+  const { admin, licenseState, session, shopEligibility } =
     await authenticateBillingRoute(request);
   const licenseActive = isLicenseActive(licenseState);
-  const transformStatus = licenseActive
+  const runtimeEnabled = getTipRuntimeEnabled({
+    shopEligibility,
+    licenseActive,
+  });
+  const transformStatus = runtimeEnabled
     ? await ensureTipCartTransform(admin, session?.scope)
     : { active: false, cartTransformId: null, errors: [] };
   const storedConfig = await loadTipConfig(admin, {
-    enabled: licenseActive,
+    enabled: runtimeEnabled,
   });
 
   if (storedConfig.transform_active !== transformStatus.active) {
@@ -517,7 +522,7 @@ export const loader = async ({ request }) => {
       admin,
       buildTipRuntimeConfig({
         savedConfig: storedConfig,
-        enabled: licenseActive,
+        enabled: runtimeEnabled,
         transformActive: transformStatus.active,
       }),
     );
@@ -526,7 +531,7 @@ export const loader = async ({ request }) => {
   return {
     config: buildTipRuntimeConfig({
       savedConfig: storedConfig,
-      enabled: licenseActive,
+      enabled: runtimeEnabled,
       transformActive: transformStatus.active,
     }),
     transformStatus,
@@ -540,16 +545,20 @@ export const action = async ({ request }) => {
     loadTipConfig,
     saveTipConfig,
   } = await import("../tip-config.server.js");
-  const { admin, licenseState, session } =
+  const { admin, licenseState, session, shopEligibility } =
     await authenticateBillingRoute(request);
   const licenseActive = isLicenseActive(licenseState);
-  const transformStatus = licenseActive
+  const runtimeEnabled = getTipRuntimeEnabled({
+    shopEligibility,
+    licenseActive,
+  });
+  const transformStatus = runtimeEnabled
     ? await ensureTipCartTransform(admin, session?.scope)
     : { active: false, cartTransformId: null, errors: [] };
   const formData = await request.formData();
   const settings = buildTipConfigFromFormData(formData);
   const existingConfig = await loadTipConfig(admin, {
-    enabled: licenseActive,
+    enabled: runtimeEnabled,
     transformActive: transformStatus.active,
   });
   const config = buildTipRuntimeConfig({
@@ -557,7 +566,7 @@ export const action = async ({ request }) => {
       ...existingConfig,
       ...settings,
     },
-    enabled: licenseActive,
+    enabled: runtimeEnabled,
     transformActive: transformStatus.active,
   });
 

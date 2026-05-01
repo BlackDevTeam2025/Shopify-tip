@@ -6,8 +6,9 @@ import {
   getTipRuntimeEnabled,
 } from "../../app/billing/access-policy.server.js";
 
-const eligibleShop = { eligible: true };
-const ineligibleShop = { eligible: false };
+const eligibleShop = { eligible: true, isDevStore: false };
+const developmentShop = { eligible: true, isDevStore: true };
+const ineligibleShop = { eligible: false, isDevStore: false };
 
 test("redirects protected routes when the shop is ineligible", () => {
   assert.deepEqual(
@@ -69,7 +70,22 @@ test("allows eligible licensed shops through protected pages", () => {
   );
 });
 
-test("only enables tip runtime for eligible licensed shops", () => {
+test("allows eligible development shops through protected pages without a paid license", () => {
+  assert.deepEqual(
+    getBillingRouteAccessDecision({
+      isLicenseRoute: false,
+      canAccessWithoutLicense: false,
+      shopEligibility: developmentShop,
+      licenseActive: false,
+    }),
+    {
+      redirectTo: null,
+      reason: null,
+    },
+  );
+});
+
+test("enables tip runtime for eligible licensed shops and development stores", () => {
   assert.equal(
     getTipRuntimeEnabled({
       shopEligibility: eligibleShop,
@@ -83,6 +99,13 @@ test("only enables tip runtime for eligible licensed shops", () => {
       licenseActive: false,
     }),
     false,
+  );
+  assert.equal(
+    getTipRuntimeEnabled({
+      shopEligibility: developmentShop,
+      licenseActive: false,
+    }),
+    true,
   );
   assert.equal(
     getTipRuntimeEnabled({

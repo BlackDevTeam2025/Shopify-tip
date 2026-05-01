@@ -12,6 +12,10 @@ export const DEFAULT_TIP_METRICS_ENABLED = true;
 export const DEFAULT_TIP_METRICS_WINDOW_DAYS = 60;
 export const DEFAULT_DEFAULT_TIP_CHOICE = "preset_2";
 
+function hasOwnField(value, key) {
+  return Object.prototype.hasOwnProperty.call(value ?? {}, key);
+}
+
 function normalizeBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
   if (value === "true") return true;
@@ -127,6 +131,7 @@ export function normalizeProductVariantId(value) {
 export function getDefaultTipConfig() {
   return {
     enabled: true,
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: true,
@@ -168,10 +173,18 @@ export function buildTipRuntimeConfig({
   transformActive,
 }) {
   const defaults = getDefaultTipConfig();
+  const merchantEnabled = hasOwnField(savedConfig, "runtime_enabled")
+    ? normalizeBoolean(savedConfig.enabled, defaults.enabled)
+    : defaults.enabled;
+  const runtimeEnabled = normalizeBoolean(
+    savedConfig.runtime_enabled,
+    enabled,
+  );
 
   return {
     ...defaults,
-    enabled: normalizeBoolean(savedConfig.enabled, defaults.enabled) && enabled,
+    enabled: merchantEnabled,
+    runtime_enabled: runtimeEnabled,
     plus_only: normalizePlusOnly(savedConfig.plus_only, defaults.plus_only),
     transform_active: normalizeBoolean(
       transformActive ?? savedConfig.transform_active,
@@ -258,6 +271,7 @@ export function buildTipConfigFromFormData(formData) {
 
   return {
     enabled: formData.get("enabled") === "on",
+    runtime_enabled: true,
     plus_only: true,
     transform_active: false,
     custom_amount_enabled: formData.get("custom_amount_enabled") !== "off",

@@ -101,10 +101,12 @@ export function getTipRuntimeConfigFromAppMetafields(appMetafields = []) {
 
   try {
     const parsed = JSON.parse(match.metafield.value);
+    const merchantEnabled = normalizeBoolean(parsed.enabled, DEFAULTS.enabled);
+    const runtimeEnabled = normalizeBoolean(parsed.runtime_enabled, true);
 
     return {
       ...DEFAULTS,
-      enabled: normalizeBoolean(parsed.enabled, DEFAULTS.enabled),
+      enabled: merchantEnabled && runtimeEnabled,
       plus_only: normalizeBoolean(parsed.plus_only, DEFAULTS.plus_only),
       transform_active: normalizeBoolean(
         parsed.transform_active,
