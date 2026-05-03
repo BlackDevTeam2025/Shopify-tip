@@ -286,11 +286,18 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
               productCreate: {
                 product: {
                   id: "gid://shopify/Product/1",
+                  status: "UNLISTED",
                   variants: {
                     edges: [
                       {
                         node: {
                           id: "gid://shopify/ProductVariant/1",
+                          inventoryPolicy: "DENY",
+                          taxable: true,
+                          inventoryItem: {
+                            tracked: false,
+                            requiresShipping: true,
+                          },
                         },
                       },
                     ],
@@ -307,29 +314,18 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
         return {
           json: async () => ({
             data: {
-              publications: {
-                edges: [
+              productVariantsBulkUpdate: {
+                productVariants: [
                   {
-                    node: {
-                      id: "gid://shopify/Publication/1",
-                      name: "Online Store",
+                    id: "gid://shopify/ProductVariant/1",
+                    inventoryPolicy: "CONTINUE",
+                    taxable: false,
+                    inventoryItem: {
+                      tracked: false,
+                      requiresShipping: false,
                     },
                   },
                 ],
-              },
-            },
-          }),
-        };
-      }
-
-      if (calls.length === 5) {
-        return {
-          json: async () => ({
-            data: {
-              publishablePublish: {
-                publishable: {
-                  id: "gid://shopify/Product/1",
-                },
                 userErrors: [],
               },
             },
@@ -337,7 +333,7 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
         };
       }
 
-      if (calls.length === 6) {
+      if (calls.length === 5) {
         return {
           json: async () => ({
             data: {
@@ -366,18 +362,27 @@ test("ensureTipConfigRuntimeState persists config plus auto-created tip merchand
   const result = await ensureTipConfigRuntimeState(admin, true);
 
   assert.equal(result.synced, true);
-  assert.equal(calls.length, 7);
-  assert.match(calls[6].options.variables.input[0].value, /"enabled":true/);
+  assert.equal(calls.length, 6);
+  assert.equal(
+    calls[3].options.variables.variants[0].inventoryPolicy,
+    "CONTINUE",
+  );
+  assert.equal(calls[3].options.variables.variants[0].taxable, false);
+  assert.deepEqual(calls[3].options.variables.variants[0].inventoryItem, {
+    tracked: false,
+    requiresShipping: false,
+  });
+  assert.match(calls[5].options.variables.input[0].value, /"enabled":true/);
   assert.match(
-    calls[6].options.variables.input[0].value,
+    calls[5].options.variables.input[0].value,
     /"runtime_enabled":true/,
   );
   assert.match(
-    calls[6].options.variables.input[0].value,
+    calls[5].options.variables.input[0].value,
     /"tip_product_id":"gid:\/\/shopify\/Product\/1"/,
   );
   assert.match(
-    calls[6].options.variables.input[0].value,
+    calls[5].options.variables.input[0].value,
     /"tip_variant_id":"gid:\/\/shopify\/ProductVariant\/1"/,
   );
 });

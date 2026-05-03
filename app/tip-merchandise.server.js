@@ -1,6 +1,7 @@
 const TIP_PRODUCT_TAG = "app_tip_internal";
 const TIP_PRODUCT_TITLE = "Tip App Internal";
-const ONLINE_STORE_PUBLICATION_NAME = "Online Store";
+const TIP_PRODUCT_STATUS = "UNLISTED";
+const TIP_VARIANT_INVENTORY_POLICY = "CONTINUE";
 
 function flattenUserErrors(userErrors = []) {
   return userErrors
@@ -25,12 +26,57 @@ async function executeAdminJson(admin, query, variables) {
   return response.json();
 }
 
-function getFirstVariantId(product) {
+function getFirstVariant(product) {
   return (
-    product?.variants?.edges?.[0]?.node?.id ??
-    product?.variants?.nodes?.[0]?.id ??
-    ""
+    product?.variants?.edges?.[0]?.node ??
+    product?.variants?.nodes?.[0] ??
+    null
   );
+}
+
+function buildMerchandiseDetails({ product, variant }) {
+  const selectedVariant = variant ?? getFirstVariant(product);
+  const selectedProduct = variant?.product ?? product;
+
+  return {
+    productId: selectedProduct?.id ?? product?.id ?? "",
+    productStatus: selectedProduct?.status ?? product?.status ?? "",
+    variantId: selectedVariant?.id ?? "",
+    variantInventoryPolicy: selectedVariant?.inventoryPolicy ?? "",
+    variantTaxable: selectedVariant?.taxable,
+    variantTracked: selectedVariant?.inventoryItem?.tracked,
+    variantRequiresShipping: selectedVariant?.inventoryItem?.requiresShipping,
+  };
+}
+
+function isTipProductHidden({ productStatus }) {
+  return productStatus === TIP_PRODUCT_STATUS;
+}
+
+function isTipVariantSellable({
+  variantInventoryPolicy,
+  variantTaxable,
+  variantTracked,
+  variantRequiresShipping,
+}) {
+  return (
+    variantInventoryPolicy === TIP_VARIANT_INVENTORY_POLICY &&
+    variantTaxable === false &&
+    variantTracked === false &&
+    variantRequiresShipping === false
+  );
+}
+
+function buildTipVariantUpdateInput(variantId) {
+  return {
+    id: variantId,
+    inventoryPolicy: TIP_VARIANT_INVENTORY_POLICY,
+    taxable: false,
+    inventoryItem: {
+      tracked: false,
+      requiresShipping: false,
+    },
+  };
 }
 
 async function validateSavedMerchandise(admin, { productId, variantId }) {
@@ -39,7 +85,9 @@ async function validateSavedMerchandise(admin, { productId, variantId }) {
   if (ids.length === 0) {
     return {
       productId: "",
+      productStatus: "",
       variantId: "",
+      variantInventoryPolicy: "",
     };
   }
 
@@ -51,17 +99,31 @@ async function validateSavedMerchandise(admin, { productId, variantId }) {
         __typename
         id
         ... on Product {
+          status
           variants(first: 1) {
             edges {
               node {
                 id
+                inventoryPolicy
+                taxable
+                inventoryItem {
+                  tracked
+                  requiresShipping
+                }
               }
             }
           }
         }
         ... on ProductVariant {
+          inventoryPolicy
+          taxable
+          inventoryItem {
+            tracked
+            requiresShipping
+          }
           product {
             id
+            status
           }
         }
       }
@@ -76,10 +138,10 @@ async function validateSavedMerchandise(admin, { productId, variantId }) {
     (node) => node?.__typename === "ProductVariant",
   );
 
-  return {
-    productId: variantNode?.product?.id ?? productNode?.id ?? "",
-    variantId: variantNode?.id ?? getFirstVariantId(productNode),
-  };
+  return buildMerchandiseDetails({
+    product: productNode,
+    variant: variantNode,
+  });
 }
 
 async function findExistingTipProduct(admin) {
@@ -92,11 +154,18 @@ async function findExistingTipProduct(admin) {
           node {
             id
             title
+            status
             tags
             variants(first: 1) {
               edges {
                 node {
                   id
+                  inventoryPolicy
+                  taxable
+                  inventoryItem {
+                    tracked
+                    requiresShipping
+                  }
                 }
               }
             }
@@ -110,8 +179,7 @@ async function findExistingTipProduct(admin) {
   const product = json.data?.products?.edges?.[0]?.node;
 
   return {
-    productId: product?.id ?? "",
-    variantId: getFirstVariantId(product),
+    ...buildMerchandiseDetails({ product }),
     errors: flattenGraphqlErrors(json.errors),
   };
 }
@@ -125,10 +193,17 @@ async function createTipProduct(admin) {
         product {
           id
           title
+          status
           variants(first: 1) {
             edges {
               node {
                 id
+                inventoryPolicy
+                taxable
+                inventoryItem {
+                  tracked
+                  requiresShipping
+                }
               }
             }
           }
@@ -142,7 +217,7 @@ async function createTipProduct(admin) {
     {
       product: {
         title: TIP_PRODUCT_TITLE,
-        status: "ACTIVE",
+        status: TIP_PRODUCT_STATUS,
         tags: [TIP_PRODUCT_TAG],
       },
     },
@@ -155,61 +230,60 @@ async function createTipProduct(admin) {
   const product = json.data?.productCreate?.product;
 
   return {
-    productId: product?.id ?? "",
-    variantId: getFirstVariantId(product),
+    ...buildMerchandiseDetails({ product }),
     errors,
   };
 }
 
-async function getOnlineStorePublication(admin) {
+async function updateTipProductStatus(admin, productId) {
   const json = await executeAdminJson(
     admin,
     `#graphql
-    query GetPublications {
-      publications(first: 25) {
-        edges {
-          node {
-            id
-            name
-          }
+    mutation HideTipProduct($product: ProductUpdateInput!) {
+      productUpdate(product: $product) {
+        product {
+          id
+          status
+        }
+        userErrors {
+          field
+          message
         }
       }
     }`,
+    {
+      product: {
+        id: productId,
+        status: TIP_PRODUCT_STATUS,
+      },
+    },
   );
 
-  const publications =
-    json.data?.publications?.edges?.map((edge) => edge?.node).filter(Boolean) ??
-    [];
-  const onlineStorePublication =
-    publications.find((publication) =>
-      publication?.name?.includes(ONLINE_STORE_PUBLICATION_NAME),
-    ) ?? null;
-
   return {
-    publicationId: onlineStorePublication?.id ?? "",
+    productStatus: json.data?.productUpdate?.product?.status ?? "",
     errors: [
       ...flattenGraphqlErrors(json.errors),
-      ...(onlineStorePublication
-        ? []
-        : [
-            {
-              message:
-                "Could not find the Online Store publication required for tip checkout.",
-            },
-          ]),
+      ...flattenUserErrors(json.data?.productUpdate?.userErrors),
     ],
   };
 }
 
-async function publishTipProduct(admin, productId, publicationId) {
+async function updateTipVariant(admin, { productId, variantId }) {
   const json = await executeAdminJson(
     admin,
     `#graphql
-    mutation PublishTipProduct($id: ID!, $input: [PublicationInput!]!) {
-      publishablePublish(id: $id, input: $input) {
-        publishable {
-          ... on Product {
-            id
+    mutation ConfigureTipVariant(
+      $productId: ID!
+      $variants: [ProductVariantsBulkInput!]!
+    ) {
+      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+        productVariants {
+          id
+          inventoryPolicy
+          taxable
+          inventoryItem {
+            tracked
+            requiresShipping
           }
         }
         userErrors {
@@ -219,42 +293,47 @@ async function publishTipProduct(admin, productId, publicationId) {
       }
     }`,
     {
-      id: productId,
-      input: [{ publicationId }],
+      productId,
+      variants: [buildTipVariantUpdateInput(variantId)],
     },
   );
 
+  const variant = json.data?.productVariantsBulkUpdate?.productVariants?.[0];
+
   return {
+    ...buildMerchandiseDetails({ variant }),
     errors: [
       ...flattenGraphqlErrors(json.errors),
-      ...flattenUserErrors(json.data?.publishablePublish?.userErrors),
+      ...flattenUserErrors(json.data?.productVariantsBulkUpdate?.userErrors),
     ],
   };
 }
 
 export async function ensureTipMerchandise(admin, config = {}) {
-  const validation = await validateSavedMerchandise(admin, {
+  let merchandise = await validateSavedMerchandise(admin, {
     productId: config.tip_product_id,
     variantId: config.tip_variant_id,
   });
 
-  let productId = validation.productId;
-  let variantId = validation.variantId;
+  let productId = merchandise.productId;
+  let variantId = merchandise.variantId;
   let needsRepair = !productId || !variantId;
   const errors = [];
 
   if (!productId || !variantId) {
     const existing = await findExistingTipProduct(admin);
-    productId = existing.productId;
-    variantId = existing.variantId;
+    merchandise = existing;
+    productId = merchandise.productId;
+    variantId = merchandise.variantId;
     needsRepair = true;
     errors.push(...existing.errors);
   }
 
   if (!productId || !variantId) {
     const created = await createTipProduct(admin);
-    productId = created.productId;
-    variantId = created.variantId;
+    merchandise = created;
+    productId = merchandise.productId;
+    variantId = merchandise.variantId;
     needsRepair = true;
 
     if (created.errors.length > 0) {
@@ -262,21 +341,36 @@ export async function ensureTipMerchandise(admin, config = {}) {
     }
   }
 
-  if (productId) {
-    const publication = await getOnlineStorePublication(admin);
+  if (productId && !isTipProductHidden(merchandise)) {
+    const statusResult = await updateTipProductStatus(admin, productId);
+    needsRepair = true;
 
-    if (publication.errors.length > 0) {
-      errors.push(...publication.errors);
+    if (statusResult.errors.length > 0) {
+      errors.push(...statusResult.errors);
     } else {
-      const publishResult = await publishTipProduct(
-        admin,
-        productId,
-        publication.publicationId,
-      );
+      merchandise = {
+        ...merchandise,
+        productStatus: statusResult.productStatus || TIP_PRODUCT_STATUS,
+      };
+    }
+  }
 
-      if (publishResult.errors.length > 0) {
-        errors.push(...publishResult.errors);
-      }
+  if (productId && variantId && !isTipVariantSellable(merchandise)) {
+    const variantResult = await updateTipVariant(admin, {
+      productId,
+      variantId,
+    });
+    needsRepair = true;
+
+    if (variantResult.errors.length > 0) {
+      errors.push(...variantResult.errors);
+    } else {
+      merchandise = {
+        ...merchandise,
+        ...variantResult,
+        productId,
+        productStatus: merchandise.productStatus,
+      };
     }
   }
 
@@ -291,28 +385,34 @@ export async function ensureTipMerchandise(admin, config = {}) {
 }
 
 export async function inspectTipMerchandise(admin, config = {}) {
-  const validation = await validateSavedMerchandise(admin, {
+  let merchandise = await validateSavedMerchandise(admin, {
     productId: config.tip_product_id,
     variantId: config.tip_variant_id,
   });
   const errors = [];
-  let productId = validation.productId;
-  let variantId = validation.variantId;
+  let productId = merchandise.productId;
+  let variantId = merchandise.variantId;
 
   if (!productId || !variantId) {
     const existing = await findExistingTipProduct(admin);
-    productId = productId || existing.productId;
-    variantId = variantId || existing.variantId;
+    merchandise = {
+      ...merchandise,
+      ...existing,
+      productId: productId || existing.productId,
+      variantId: variantId || existing.variantId,
+    };
+    productId = merchandise.productId;
+    variantId = merchandise.variantId;
     errors.push(...existing.errors);
   }
 
-  const publication = await getOnlineStorePublication(admin);
-  errors.push(...publication.errors);
+  const productReady = productId && isTipProductHidden(merchandise);
+  const variantReady = variantId && isTipVariantSellable(merchandise);
 
   const status =
-    errors.length > 0
+    errors.length > 0 || !productReady || !variantReady
       ? "warning"
-      : productId && variantId && publication.publicationId
+      : productId && variantId
         ? "ready"
         : "warning";
   let message = errors[0]?.message ?? "";
@@ -320,9 +420,12 @@ export async function inspectTipMerchandise(admin, config = {}) {
   if (!message && (!productId || !variantId)) {
     message =
       "Internal tip merchandise is missing. Open Tip Settings to let the app repair it.";
-  } else if (!message && !publication.publicationId) {
+  } else if (!message && !productReady) {
     message =
-      "The Online Store publication is not available for the internal tip product.";
+      "Internal tip product should be unlisted. Open Tip Settings to let the app repair it.";
+  } else if (!message && !variantReady) {
+    message =
+      "Internal tip variant can sell out. Open Tip Settings to let the app repair it.";
   } else if (!message) {
     message = "Internal tip product and variant are ready for checkout.";
   }
@@ -332,7 +435,7 @@ export async function inspectTipMerchandise(admin, config = {}) {
     message,
     productId,
     variantId,
-    publicationId: publication.publicationId,
+    publicationId: "",
     errors,
   };
 }
@@ -340,5 +443,6 @@ export async function inspectTipMerchandise(admin, config = {}) {
 export const tipMerchandiseConstants = {
   TIP_PRODUCT_TAG,
   TIP_PRODUCT_TITLE,
-  ONLINE_STORE_PUBLICATION_NAME,
+  TIP_PRODUCT_STATUS,
+  TIP_VARIANT_INVENTORY_POLICY,
 };
