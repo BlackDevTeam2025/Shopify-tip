@@ -68,15 +68,21 @@ test("tip block settings route uses the new fixed-preset admin controls", () => 
     routeSource.includes("Edit the tip choices shown directly in checkout."),
     true,
   );
+  assert.equal(routeSource.includes("Setup checklist"), true);
+  assert.equal(routeSource.includes("<strong>Enable tipping</strong>"), true);
+  assert.equal(routeSource.includes("<strong>Save settings</strong>"), true);
   assert.equal(
     routeSource.includes(
-      "After install, enable tipping here, then add the SnapTip checkout",
+      "<strong>Settings &gt; Checkout &gt; Customize</strong>",
     ),
     true,
   );
+  assert.equal(routeSource.includes("<strong>Add app block</strong>"), true);
+  assert.equal(routeSource.includes("<strong>SnapTip</strong>"), true);
   assert.equal(
-    routeSource.includes("block from Checkout Editor and click Save"),
+    routeSource.includes("<strong>Save</strong> in the checkout editor"),
     true,
   );
-  assert.equal(routeSource.includes("The live checkout shows"), true);
+  assert.equal(routeSource.includes("Customers will see the tip form"), true);
+  assert.equal(routeSource.includes("Merchant setup is required once"), true);
 });

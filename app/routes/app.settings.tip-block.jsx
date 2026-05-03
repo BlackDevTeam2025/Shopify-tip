@@ -75,12 +75,36 @@ const styles = {
     color: "#111827",
     fontWeight: 400,
   },
-  pageSetupNote: {
-    margin: "8px 0 0",
+  pageSetupCard: {
+    margin: "12px 0 0",
+    maxWidth: "820px",
+    border: "1px solid #c7d2fe",
+    borderRadius: "14px",
+    background: "#eef2ff",
+    padding: "12px 14px",
+    color: "#1f2937",
+  },
+  pageSetupTitle: {
+    margin: 0,
+    fontSize: "13px",
+    lineHeight: 1.35,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  pageSetupList: {
+    margin: "8px 0 0 18px",
+    padding: 0,
+    display: "grid",
+    gap: "5px",
     fontSize: "12px",
     lineHeight: 1.5,
-    color: "#4b5563",
-    maxWidth: "760px",
+    color: "#374151",
+  },
+  pageSetupFootnote: {
+    margin: "9px 0 0",
+    fontSize: "12px",
+    lineHeight: 1.45,
+    color: "#374151",
   },
   mainCard: {
     background: "#ffffff",
@@ -689,11 +713,36 @@ export default function TipBlockSettings() {
           <p style={styles.pageSub}>
             Edit the tip choices shown directly in checkout.
           </p>
-          <p style={styles.pageSetupNote}>
-            After install, enable tipping here, then add the SnapTip checkout
-            block from Checkout Editor and click Save. The live checkout shows
-            tips only after that block is saved.
-          </p>
+          <div style={styles.pageSetupCard}>
+            <p style={styles.pageSetupTitle}>Setup checklist</p>
+            <ol style={styles.pageSetupList}>
+              <li>
+                Turn on <strong>Enable tipping</strong> here, then click{" "}
+                <strong>Save settings</strong>.
+              </li>
+              <li>
+                Open Shopify Admin:{" "}
+                <strong>Settings &gt; Checkout &gt; Customize</strong>.
+              </li>
+              <li>
+                In Checkout Editor, click <strong>Add app block</strong> and
+                choose <strong>SnapTip</strong>.
+              </li>
+              <li>
+                Place the block under{" "}
+                <strong>Order summary &gt; Items in cart</strong>, then click{" "}
+                <strong>Save</strong> in the checkout editor.
+              </li>
+              <li>
+                <strong>Customers will see the tip form</strong> in live
+                checkout after the checkout editor is saved.
+              </li>
+            </ol>
+            <p style={styles.pageSetupFootnote}>
+              <strong>Merchant setup is required once.</strong> Customers do not
+              need to do anything.
+            </p>
+          </div>
         </div>
 
         <div className="tip-settings-layout">
