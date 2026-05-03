@@ -75,6 +75,13 @@ const styles = {
     color: "#111827",
     fontWeight: 400,
   },
+  pageSetupNote: {
+    margin: "8px 0 0",
+    fontSize: "12px",
+    lineHeight: 1.5,
+    color: "#4b5563",
+    maxWidth: "760px",
+  },
   mainCard: {
     background: "#ffffff",
     border: "1px solid #e5e7eb",
@@ -681,6 +688,11 @@ export default function TipBlockSettings() {
           <h1 style={styles.pageTitle}>Tipping</h1>
           <p style={styles.pageSub}>
             Edit the tip choices shown directly in checkout.
+          </p>
+          <p style={styles.pageSetupNote}>
+            After install, enable tipping here, then add the SnapTip checkout
+            block from Checkout Editor and click Save. The live checkout shows
+            tips only after that block is saved.
           </p>
         </div>
 
